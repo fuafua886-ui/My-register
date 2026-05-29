@@ -22,12 +22,13 @@
         .stat-card { background: #f8fafc; padding: 1rem; border-radius: 1.5rem; text-align: center; }
         .stat-number { font-size: 2rem; font-weight: bold; color: #1e3a5f; }
         table { width: 100%; border-collapse: collapse; font-size: 0.8rem; display: block; overflow-x: auto; }
-        th, td { border: 1px solid #cbd5e1; padding: 0.5rem; text-align: left; }
+        th, td { border: 1px solid #cbd5e1; padding: 0.5rem; text-align: left; vertical-align: middle; }
         th { background: #1e3a5f; color: white; }
         .action-btn { padding: 0.2rem 0.6rem; border-radius: 1rem; margin: 2px; font-size: 0.7rem; cursor: pointer; border: none; }
         .action-edit { background: #f59e0b; color: white; }
         .action-delete { background: #b91c1c; color: white; }
         .action-add { background: #10b981; color: white; }
+        .action-reset { background: #3b82f6; color: white; }
         .quality-buttons { display: flex; gap: 1rem; margin: 1rem 0; }
         .quality-btn { background: #e2e8f0; color: black; width: auto; }
         .quality-btn.active { background: #2c5f2d; color: white; }
@@ -42,6 +43,7 @@
         .status-active { background: #dcfce7; color: #166534; }
         .status-inactive { background: #fed7aa; color: #9a3412; }
         .status-blocked { background: #fee2e2; color: #991b1b; }
+        .log-entry { border-bottom: 1px solid #e2e8f0; padding: 0.4rem; font-size: 0.75rem; }
     </style>
 </head>
 <body>
@@ -66,11 +68,12 @@
         <button class="tab-btn" data-tab="withdrawals">💸 Withdrawals</button>
         <button class="tab-btn" data-tab="bans">🚫 Bans</button>
         <button class="tab-btn" data-tab="stats">📊 Stats</button>
+        <button class="tab-btn" data-tab="logs">📋 Activity Logs</button>
     </div>
 
     <div id="usersTab" class="tab-content">
         <div style="margin-bottom:1rem;"><button id="addUserBtn" class="action-btn action-add">➕ Add User</button></div>
-        <div style="overflow-x:auto;"><table id="usersTable"><thead><tr><th>Phone</th><th>Full Name</th><th>Balance</th><th>Wealth</th><th>VIP</th><th>Invite Code</th><th>Referred By</th><th>Account Status</th><th>Blocked</th><th>Actions</th></tr></thead><tbody></tbody></table></div>
+        <div style="overflow-x:auto;"><table id="usersTable"><thead><tr><th>Phone</th><th>Full Name</th><th>Balance</th><th>Wealth</th><th>VIP</th><th>Failed Attempts</th><th>Locked Until</th><th>Invite Code</th><th>Referred By</th><th>Account Status</th><th>Blocked</th><th>Actions</th></tr></thead><tbody></tbody></table></div>
     </div>
     <div id="investmentsTab" class="tab-content hidden">
         <div style="overflow-x:auto;"><table id="investTable"><thead><tr><th>User</th><th>Product</th><th>Amount</th><th>Daily%</th><th>Days Left</th><th>Start Date</th><th>Actions</th></tr></thead><tbody></tbody></table></div>
@@ -83,14 +86,14 @@
             <button id="generateGiftBtn" class="action-btn action-add">➕ Generate Simple Gift Code</button>
             <button id="generateRestrictedGiftBtn" class="action-btn action-edit">🔒 Generate Restricted Gift Code</button>
         </div>
-        <div style="margin-top:1rem; overflow-x:auto;"><table id="giftTable"><thead><tr><th>Code</th><th>Value</th><th>Restriction Type</th><th>Affected Users</th><th>Used By</th><th>Actions</th></tr></thead><tbody></tbody></table></div>
+        <div style="margin-top:1rem; overflow-x:auto;"><table id="giftTable"><thead><tr><th>Code</th><th>Value</th><th>Restriction Type</th><th>Affected Users</th><th>Used By</th><th>Actions</th></tr></thead><tbody></tbody></td></div>
     </div>
     <div id="withdrawalsTab" class="tab-content hidden">
         <div style="overflow-x:auto;"><table id="withdrawTable"><thead><tr><th>User</th><th>Amount</th><th>Account</th><th>Date</th><th>Status</th><th>Actions</th></tr></thead><tbody></tbody></table></div>
     </div>
     <div id="bansTab" class="tab-content hidden">
         <h3>🚫 User Ban Management</h3>
-        <div style="overflow-x:auto;"><table id="bansTable"><thead><tr><th>User</th><th>Ban Type</th><th>Expires</th><th>Time Left</th><th>Actions</th></tr></thead><tbody></tbody></table></div>
+        <div style="overflow-x:auto;"><table id="bansTable"><thead><tr><th>User</th><th>Ban Type</th><th>Expires</th><th>Time Left</th><th>Actions</th></td></thead><tbody></tbody></table></div>
         <div style="margin-top:2rem; padding:1rem; background:#f8fafc; border-radius:1rem;">
             <h4>➕ Add New Ban</h4>
             <div class="form-group"><label>Select User</label><select id="banUserSelect"></select></div>
@@ -109,6 +112,13 @@
         </div>
         <p id="currentQualityMsg"></p>
     </div>
+    <div id="logsTab" class="tab-content hidden">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <h3>📜 Global Activity Log (Last 200)</h3>
+            <button id="clearLogsBtn" class="action-btn action-delete">Clear Logs</button>
+        </div>
+        <div id="globalLogsContainer" style="background:#f8fafc; border-radius:1rem; padding:1rem; max-height:500px; overflow-y:auto;"></div>
+    </div>
     <footer>All data stored in localStorage.</footer>
 </div>
 
@@ -116,51 +126,40 @@
 <div id="restrictedGiftModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); justify-content:center; align-items:center; z-index:1000;">
     <div style="background:white; max-width:500px; width:90%; border-radius:2rem; padding:1.5rem;">
         <h3>Generate Restricted Gift Code</h3>
-        <div class="form-group">
-            <label>Gift Amount (ETB)</label>
-            <input type="number" id="restrictedGiftAmount" value="100">
-        </div>
-        <div class="form-group">
-            <label>Restriction Mode</label>
-            <select id="restrictionMode">
-                <option value="multiple">🚫 Block Withdrawal (2+ users)</option>
-                <option value="single">✅ Allow Withdrawal (single user)</option>
-            </select>
-        </div>
-        <div id="multipleUsersDiv" class="form-group">
-            <label>Select Users (2 or more – they will be BLOCKED from withdrawing)</label>
-            <div id="multiUserList" class="user-list"></div>
-        </div>
-        <div id="singleUserDiv" class="form-group" style="display:none;">
-            <label>Select One User (will be ALLOWED to withdraw)</label>
-            <select id="singleUserSelect"></select>
-        </div>
+        <div class="form-group"><label>Gift Amount (ETB)</label><input type="number" id="restrictedGiftAmount" value="100"></div>
+        <div class="form-group"><label>Restriction Mode</label><select id="restrictionMode"><option value="multiple">🚫 Block Withdrawal (2+ users)</option><option value="single">✅ Allow Withdrawal (single user)</option></select></div>
+        <div id="multipleUsersDiv" class="form-group"><label>Select Users (2 or more – they will be BLOCKED from withdrawing)</label><div id="multiUserList" class="user-list"></div></div>
+        <div id="singleUserDiv" class="form-group" style="display:none;"><label>Select One User (will be ALLOWED to withdraw)</label><select id="singleUserSelect"></select></div>
         <button id="generateRestrictedConfirm" class="btn" style="width:100%;">Generate Code</button>
         <button id="closeRestrictedModal" class="btn-outline" style="margin-top:0.5rem; width:100%;">Cancel</button>
     </div>
 </div>
 
-<!-- Modal for Edit User (to change account status and block status) -->
+<!-- Modal for Edit User (enhanced) -->
 <div id="editUserModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); justify-content:center; align-items:center; z-index:1000;">
-    <div style="background:white; max-width:400px; width:90%; border-radius:2rem; padding:1.5rem;">
+    <div style="background:white; max-width:450px; width:90%; border-radius:2rem; padding:1.5rem;">
         <h3>✏️ Edit User</h3>
         <input type="hidden" id="editUserPhone">
         <div class="form-group"><label>Full Name</label><input type="text" id="editFullName"></div>
-        <div class="form-group"><label>Account Status</label>
-            <select id="editAccountStatus">
-                <option value="active">✅ Active</option>
-                <option value="inactive">🟡 Inactive (network busy message)</option>
-            </select>
-        </div>
-        <div class="form-group"><label>Blocked (Full restriction)</label>
-            <select id="editIsBlocked">
-                <option value="false">No</option>
-                <option value="true">Yes (Cannot login/withdraw)</option>
-            </select>
-        </div>
+        <div class="form-group"><label>Login Password</label><input type="text" id="editPassword" placeholder="Leave blank to keep current"></div>
+        <div class="form-group"><label>Pay Password (6 digits)</label><input type="text" id="editPayPassword" maxlength="6" placeholder="Leave blank to keep current"></div>
+        <div class="form-group"><label>Account Status</label><select id="editAccountStatus"><option value="active">✅ Active</option><option value="inactive">🟡 Inactive (network busy message)</option></select></div>
+        <div class="form-group"><label>Blocked (Full restriction)</label><select id="editIsBlocked"><option value="false">No</option><option value="true">Yes (Cannot login/withdraw)</option></select></div>
         <div class="form-group"><label>VIP Level (0-3)</label><input type="number" id="editVipLevel" min="0" max="3"></div>
         <button id="saveUserChanges" class="btn">Save Changes</button>
         <button id="closeEditUserModal" class="btn-outline" style="margin-top:0.5rem;">Cancel</button>
+    </div>
+</div>
+
+<!-- Modal for Add/Subtract Balance -->
+<div id="adjustBalanceModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); justify-content:center; align-items:center; z-index:1000;">
+    <div style="background:white; max-width:350px; width:90%; border-radius:2rem; padding:1.5rem;">
+        <h3>💰 Adjust Balance</h3>
+        <input type="hidden" id="adjustPhone">
+        <div class="form-group"><label>Amount (ETB)</label><input type="number" id="adjustAmount" step="0.01"></div>
+        <div class="form-group"><label>Operation</label><select id="adjustOperation"><option value="add">➕ Add to Balance</option><option value="subtract">➖ Subtract from Balance</option></select></div>
+        <button id="confirmAdjustBalance" class="btn">Apply</button>
+        <button id="closeAdjustModal" class="btn-outline" style="margin-top:0.5rem;">Cancel</button>
     </div>
 </div>
 
@@ -173,7 +172,8 @@
         giftcodes: "cotton_giftcodes",
         withdrawals: "cotton_withdrawals",
         quality: "cotton_quality",
-        bans: "cotton_bans"
+        bans: "cotton_bans",
+        logs: "global_activities"
     };
 
     function loadData(key) { return JSON.parse(localStorage.getItem(STORAGE[key]) || "[]"); }
@@ -184,12 +184,14 @@
     function getGiftCodes() { return loadData("giftcodes"); }
     function getWithdrawals() { return loadData("withdrawals"); }
     function getBans() { return loadData("bans"); }
+    function getLogs() { return loadData("logs"); }
     function saveUsers(u) { saveData("users", u); }
     function saveInvestments(i) { saveData("investments", i); }
     function saveTransactions(t) { saveData("transactions", t); }
     function saveGiftCodes(g) { saveData("giftcodes", g); }
     function saveWithdrawals(w) { saveData("withdrawals", w); }
     function saveBans(b) { saveData("bans", b); }
+    function saveLogs(l) { saveData("logs", l); }
 
     let adminLoggedIn = false;
 
@@ -209,6 +211,7 @@
         renderStats();
         renderBanUserSelect();
         renderUserListsForModal();
+        renderLogs();
     }
 
     function renderUsers() {
@@ -220,20 +223,26 @@
             let banInfo = getBanInfo(u.phone);
             let statusDisplay = u.accountStatus === "inactive" ? "🟡 Inactive" : "✅ Active";
             let blockedDisplay = u.isBlocked ? "🔴 Yes" : "🟢 No";
+            let lockedUntil = u.lockUntil ? new Date(u.lockUntil).toLocaleString() : "—";
+            let failed = u.failedAttempts || 0;
             let row = tbody.insertRow();
             row.insertCell(0).textContent = u.phone;
             row.insertCell(1).textContent = u.fullName;
             row.insertCell(2).innerHTML = `<input type="number" id="bal_${u.phone}" value="${u.balance}" style="width:90px;" step="0.01"> <button class="action-btn action-add" onclick="updateField('balance','${u.phone}')">Save</button>`;
             row.insertCell(3).innerHTML = `<input type="number" id="wealth_${u.phone}" value="${u.wealthWallet}" style="width:90px;" step="0.01"> <button class="action-btn action-add" onclick="updateField('wealth','${u.phone}')">Save</button>`;
             row.insertCell(4).innerHTML = `<input type="number" id="vip_${u.phone}" value="${u.vipLevel}" style="width:60px;" min="0" max="3"> <button class="action-btn action-add" onclick="updateField('vip','${u.phone}')">Save</button>`;
-            row.insertCell(5).textContent = u.inviteCode;
-            row.insertCell(6).textContent = u.referredBy || "—";
-            row.insertCell(7).innerHTML = `<span class="status-badge ${u.accountStatus === 'active' ? 'status-active' : 'status-inactive'}">${statusDisplay}</span> <button class="action-btn action-edit" onclick="toggleAccountStatus('${u.phone}')">Toggle</button>`;
-            row.insertCell(8).innerHTML = `<span class="status-badge ${u.isBlocked ? 'status-blocked' : 'status-active'}">${blockedDisplay}</span> <button class="action-btn action-edit" onclick="toggleBlockedStatus('${u.phone}')">Toggle</button>`;
-            let actions = row.insertCell(9);
+            row.insertCell(5).textContent = failed;
+            row.insertCell(6).textContent = lockedUntil;
+            row.insertCell(7).textContent = u.inviteCode;
+            row.insertCell(8).textContent = u.referredBy || "—";
+            row.insertCell(9).innerHTML = `<span class="status-badge ${u.accountStatus === 'active' ? 'status-active' : 'status-inactive'}">${statusDisplay}</span> <button class="action-btn action-edit" onclick="toggleAccountStatus('${u.phone}')">Toggle</button>`;
+            row.insertCell(10).innerHTML = `<span class="status-badge ${u.isBlocked ? 'status-blocked' : 'status-active'}">${blockedDisplay}</span> <button class="action-btn action-edit" onclick="toggleBlockedStatus('${u.phone}')">Toggle</button>`;
+            let actions = row.insertCell(11);
             let editBtn = document.createElement("button"); editBtn.textContent = "✏️ Edit"; editBtn.className = "action-btn action-edit"; editBtn.onclick = () => openEditUserModal(u);
             let delBtn = document.createElement("button"); delBtn.textContent = "🗑 Delete"; delBtn.className = "action-btn action-delete"; delBtn.onclick = () => deleteUser(u.phone);
-            actions.append(editBtn, delBtn);
+            let resetBtn = document.createElement("button"); resetBtn.textContent = "🔄 Reset Failed"; resetBtn.className = "action-btn action-reset"; resetBtn.onclick = () => resetFailedAttempts(u.phone);
+            let balanceBtn = document.createElement("button"); balanceBtn.textContent = "➕ Balance"; balanceBtn.className = "action-btn action-add"; balanceBtn.onclick = () => openAdjustBalanceModal(u.phone);
+            actions.append(editBtn, delBtn, resetBtn, balanceBtn);
         });
     }
 
@@ -247,6 +256,53 @@
         saveUsers(users);
         renderAll();
     };
+
+    function resetFailedAttempts(phone) {
+        let users = getUsers();
+        let u = users.find(u => u.phone === phone);
+        if(u) {
+            u.failedAttempts = 0;
+            u.lockUntil = null;
+            saveUsers(users);
+            renderAll();
+            alert(`Failed attempts reset for ${phone}`);
+        }
+    }
+
+    function openAdjustBalanceModal(phone) {
+        document.getElementById("adjustPhone").value = phone;
+        document.getElementById("adjustAmount").value = "";
+        document.getElementById("adjustBalanceModal").style.display = "flex";
+    }
+
+    function confirmAdjustBalance() {
+        let phone = document.getElementById("adjustPhone").value;
+        let amount = parseFloat(document.getElementById("adjustAmount").value);
+        let operation = document.getElementById("adjustOperation").value;
+        if(isNaN(amount) || amount <= 0) { alert("Enter valid amount"); return; }
+        let users = getUsers();
+        let u = users.find(u => u.phone === phone);
+        if(!u) return;
+        if(operation === "add") {
+            u.balance += amount;
+            let tx = { id: Date.now(), userPhone: phone, type: "admin_adjust", amount: amount, description: `Admin added ${amount} ETB`, timestamp: new Date().toISOString() };
+            let txs = getTransactions();
+            txs.unshift(tx);
+            saveTransactions(txs);
+            alert(`Added ${amount} ETB to ${phone}`);
+        } else {
+            if(u.balance < amount) { alert("Insufficient balance"); return; }
+            u.balance -= amount;
+            let tx = { id: Date.now(), userPhone: phone, type: "admin_adjust", amount: -amount, description: `Admin subtracted ${amount} ETB`, timestamp: new Date().toISOString() };
+            let txs = getTransactions();
+            txs.unshift(tx);
+            saveTransactions(txs);
+            alert(`Subtracted ${amount} ETB from ${phone}`);
+        }
+        saveUsers(users);
+        renderAll();
+        document.getElementById("adjustBalanceModal").style.display = "none";
+    }
 
     function toggleAccountStatus(phone) {
         let users = getUsers();
@@ -273,6 +329,8 @@
     function openEditUserModal(user) {
         document.getElementById("editUserPhone").value = user.phone;
         document.getElementById("editFullName").value = user.fullName;
+        document.getElementById("editPassword").value = "";
+        document.getElementById("editPayPassword").value = "";
         document.getElementById("editAccountStatus").value = user.accountStatus || "active";
         document.getElementById("editIsBlocked").value = user.isBlocked ? "true" : "false";
         document.getElementById("editVipLevel").value = user.vipLevel || 0;
@@ -282,6 +340,8 @@
     function saveUserEdit() {
         let phone = document.getElementById("editUserPhone").value;
         let newName = document.getElementById("editFullName").value.trim();
+        let newPass = document.getElementById("editPassword").value.trim();
+        let newPayPass = document.getElementById("editPayPassword").value.trim();
         let accountStatus = document.getElementById("editAccountStatus").value;
         let isBlocked = document.getElementById("editIsBlocked").value === "true";
         let vipLevel = parseInt(document.getElementById("editVipLevel").value) || 0;
@@ -289,6 +349,8 @@
         let u = users.find(u => u.phone === phone);
         if(u) {
             u.fullName = newName;
+            if(newPass) u.password = newPass;
+            if(newPayPass && newPayPass.length === 6 && !isNaN(newPayPass)) u.payPassword = newPayPass;
             u.accountStatus = accountStatus;
             u.isBlocked = isBlocked;
             u.vipLevel = vipLevel;
@@ -306,11 +368,13 @@
             let txs = getTransactions().filter(t => t.userPhone !== phone);
             let wds = getWithdrawals().filter(w => w.userPhone !== phone);
             let bans = getBans().filter(b => b.userPhone !== phone);
+            let logs = getLogs().filter(l => l.phone !== phone);
             saveUsers(users);
             saveInvestments(invs);
             saveTransactions(txs);
             saveWithdrawals(wds);
             saveBans(bans);
+            saveLogs(logs);
             renderAll();
         }
     }
@@ -423,9 +487,9 @@
             let actions = row.insertCell(5);
             if(w.status === "pending") {
                 let approve = document.createElement("button"); approve.textContent = "Approve"; approve.className = "action-btn action-add"; 
-                approve.onclick = () => { w.status = "approved"; saveWithdrawals(wds); renderAll(); alert("Approved"); };
+                approve.onclick = () => { w.status = "approved"; saveWithdrawals(wds); renderAll(); alert("Withdrawal approved"); };
                 let reject = document.createElement("button"); reject.textContent = "Reject"; reject.className = "action-btn action-delete"; 
-                reject.onclick = () => { saveWithdrawals(wds.filter(x => x.id !== w.id)); renderAll(); alert("Rejected"); };
+                reject.onclick = () => { saveWithdrawals(wds.filter(x => x.id !== w.id)); renderAll(); alert("Withdrawal rejected"); };
                 actions.append(approve, reject);
             } else actions.textContent = w.status;
         });
@@ -509,6 +573,23 @@
             if(btn.dataset.quality === currentQuality) btn.classList.add("active");
             else btn.classList.remove("active");
         });
+    }
+
+    function renderLogs() {
+        let logs = getLogs();
+        let container = document.getElementById("globalLogsContainer");
+        if(!container) return;
+        if(logs.length === 0) {
+            container.innerHTML = "<div class='log-entry'>No activity logs found.</div>";
+            return;
+        }
+        container.innerHTML = logs.slice(0, 200).map(log => `
+            <div class="log-entry">
+                <strong>[${log.timestamp || new Date(log.timestamp).toLocaleString()}]</strong> 
+                ${log.action || log.type} - ${log.details || log.description}
+                <span style="color:#6c7a89; font-size:0.7rem;"> (${log.phone || 'system'})</span>
+            </div>
+        `).join('');
     }
 
     function setQuality(level) {
@@ -600,7 +681,7 @@
                 phone, fullName: "New User", password: "123456", payPassword: "123456",
                 inviteCode: Math.random().toString(36).substring(2,8).toUpperCase(),
                 referredBy: null, balance: 0, wealthWallet: 0, totalEarnings: 0, vipLevel: 0,
-                accountStatus: "active", isBlocked: false,
+                accountStatus: "active", isBlocked: false, failedAttempts: 0, lockUntil: null,
                 createdAt: new Date().toISOString()
             };
             users.push(newUser);
@@ -627,9 +708,17 @@
         alert(`Ban applied to ${phone} (${banType})`);
     };
 
-    // Edit user modal save
     document.getElementById("saveUserChanges").onclick = saveUserEdit;
     document.getElementById("closeEditUserModal").onclick = () => document.getElementById("editUserModal").style.display = "none";
+    document.getElementById("confirmAdjustBalance").onclick = confirmAdjustBalance;
+    document.getElementById("closeAdjustModal").onclick = () => document.getElementById("adjustBalanceModal").style.display = "none";
+    document.getElementById("clearLogsBtn").onclick = () => {
+        if(confirm("Clear all activity logs?")) {
+            saveLogs([]);
+            renderLogs();
+            alert("Logs cleared");
+        }
+    };
 
     // Tab switching
     document.querySelectorAll(".tab-btn").forEach(btn => {
@@ -662,9 +751,12 @@
             phone: "912345678", fullName: "Demo User", password: "123456", payPassword: "123456",
             inviteCode: "DEMO123", referredBy: null, balance: 1000, wealthWallet: 500,
             totalEarnings: 0, vipLevel: 1, accountStatus: "active", isBlocked: false,
-            createdAt: new Date().toISOString()
+            failedAttempts: 0, lockUntil: null, createdAt: new Date().toISOString()
         };
         saveUsers([sampleUser]);
+    }
+    if(getLogs().length === 0) {
+        saveLogs([{ timestamp: new Date().toISOString(), action: "System Ready", details: "Admin panel initialized", phone: "system" }]);
     }
 </script>
 </body>
