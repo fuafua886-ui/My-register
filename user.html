@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>ምዝገባ እና መግቢያ -ጥቁር ዳራ ላይ ፎቶ</title>
+    <title>ምዝገባ እና መግቢያ - ጥቁር ዳራ ላይ ፎቶ</title>
     <style>
         * { margin:0; padding:0; box-sizing:border-box; }
         body {
@@ -172,7 +172,6 @@
                 <button id="galleryBtn">🖼️ ከጋላሪ</button>
             </div>
             <button id="acceptPhotoBtn">✅ ፎቶ ተቀበል</button>
-            <!-- የ "ፎቶ ውድቅ አድርግ" አዝራር ሙሉ በሙሉ ተወግዷል -->
             <div class="info-text">የፊት ካሜራ ተጠቅመው ፎቶ ያንሱ ወይም ከጋላሪ ይምረጡ።</div>
         </div>
     </div>
@@ -337,7 +336,7 @@
     document.getElementById('cameraFrontBtn').addEventListener('click', triggerFrontCamera);
     document.getElementById('galleryBtn').addEventListener('click', triggerGallery);
 
-    // Accept Photo Button
+    // Accept Photo Button - fully enhanced
     document.getElementById('acceptPhotoBtn').addEventListener('click', function() {
         if(!currentPhotoData) {
             showMessage("እባክዎ መጀመሪያ ፎቶ ያንሱ ወይም ይምረጡ", false);
@@ -362,10 +361,7 @@
         const mainCard = document.getElementById('mainCard');
         if(mainCard) mainCard.style.display = 'none';
         
-        let displayPhoto = null;
-        if(tempRegData.photoData) {
-            displayPhoto = tempRegData.photoData;
-        }
+        let displayPhoto = tempRegData.photoData || null;
         
         const thirdDiv = document.createElement('div');
         thirdDiv.className = 'third-page-full';
@@ -395,7 +391,6 @@
     // ----- የመግቢያ (Login) ተግባር -----
     function findUserByPhoneAndPassword(phone, password) {
         const records = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
-        // ሙሉ ምዝገባ ያላቸውን ብቻ (step: complete_with_photo) እንፈልጋለን
         return records.find(rec => rec.phone === phone && rec.password === password && rec.step === 'complete_with_photo');
     }
 
@@ -437,4 +432,3 @@
 </script>
 </body>
 </html>
-
