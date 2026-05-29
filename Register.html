@@ -26,10 +26,12 @@
         .btn-outline { background: transparent; border: 1px solid #1e3a5f; color: #1e3a5f; }
         .toggle-link { text-align: center; margin-top: 1rem; font-size: 0.85rem; }
         .toggle-link a { color: #2c7da0; text-decoration: none; font-weight: 600; }
+        /* ✅ ቀይ እና አረንጓዴ ቀለማት ለባላንስ */
         .balance-card { background: linear-gradient(135deg, #1e3a5f, #0f2c48); color: white; border-radius: 1.5rem; padding: 1.2rem; margin: 1rem; text-align: center; }
-        .balance-amount { font-size: 2rem; font-weight: bold; margin: 0.5rem 0; }
-        .action-buttons { display: flex; gap: 1rem; margin-top: 1rem; }
-        .action-btn { flex: 1; background: rgba(255,255,255,0.2); border: none; padding: 0.6rem; border-radius: 2rem; color: white; font-weight: bold; }
+        .balance-amount { font-size: 2rem; font-weight: bold; margin: 0.5rem 0; color: #10b981; } /* አረንጓዴ */
+        .recharge-wallet { color: #ef4444; } /* ቀይ – ለሪቻርጅ ባላንስ መለያ */
+        .action-btn-recharge { background: #ef4444; color: white; } /* የሪቻርጅ አዝራር ቀይ */
+        .action-btn-withdraw { background: #f59e0b; color: white; }
         .products-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 1rem; padding: 1rem; }
         .product-card { background: white; border-radius: 1.25rem; padding: 1rem; box-shadow: 0 8px 20px rgba(0,0,0,0.05); border: 1px solid #eef2f6; text-align: center; }
         .product-card h4 { font-size: 1.2rem; font-weight: 700; color: #1e3a5f; margin-bottom: 0.5rem; }
@@ -105,7 +107,7 @@
     </div>
 </div>
 
-<!-- Modals (will be populated by JS) -->
+<!-- Modals -->
 <div id="rechargeModal" class="modal"></div>
 <div id="withdrawModal" class="modal"></div>
 <div id="investModal" class="modal"></div>
@@ -153,9 +155,16 @@
             { code: "FT26110L6GG0", amount: 500, usedBy: null },
             { code: "FT98765ABCD", amount: 1000, usedBy: null }
         ];
-        if (giftCodes.length === 0) giftCodes.push({ code: "YXMTQX", value: 50, usedBy: null });
         
-        // ✅ ምንም ተጠቃሚ ከሌለ አንድ የሙከራ ተጠቃሚ በራሱ ይፍጠር (ስልክ: 0947655291, ይለፍ ቃል: 123456)
+        // Gift code fields
+        for (let g of giftCodes) {
+            if (g.active === undefined) g.active = true;
+            if (g.expiresAt === undefined) g.expiresAt = null;
+        }
+        
+        if (giftCodes.length === 0) giftCodes.push({ code: "YXMTQX", value: 50, usedBy: null, active: true, expiresAt: null });
+        
+        // Demo user
         if (users.length === 0) {
             let demoUser = {
                 phone: "0947655291",
@@ -165,6 +174,7 @@
                 inviteCode: generateInviteCode(),
                 referredBy: null,
                 balance: 5000,
+                rechargeBalance: 5000,
                 wealthWallet: 0,
                 rewardWallet: 0,
                 totalEarnings: 0,
@@ -176,9 +186,15 @@
                 createdAt: new Date().toISOString()
             };
             users.push(demoUser);
-            saveData();
-            console.log("Demo user created: 0947655291 / 123456");
         }
+        
+        // Ensure all users have rechargeBalance
+        for (let u of users) {
+            if (u.rechargeBalance === undefined) u.rechargeBalance = 0;
+            // also ensure lastVideoTaskDate exists
+            if (u.lastVideoTaskDate === undefined) u.lastVideoTaskDate = null;
+        }
+        
         saveData();
     }
 
@@ -238,7 +254,7 @@
         renderMinePage();
     }
 
-    // Home Page
+    // Home Page with colored buttons and balance
     function renderHomePage() {
         let user = users.find(u => u.phone === currentUser);
         if (!user) return;
@@ -248,9 +264,10 @@
                 <div class="balance-amount">${user.balance.toFixed(2)} ETB</div>
                 <div>Wallet Balance</div>
                 <div class="action-buttons">
-                    <button class="action-btn" id="openRecharge">➕ Recharge</button>
-                    <button class="action-btn" id="openWithdraw">➖ Withdraw</button>
+                    <button class="action-btn action-btn-recharge" id="openRecharge">➕ Recharge</button>
+                    <button class="action-btn action-btn-withdraw" id="openWithdraw">➖ Withdraw</button>
                 </div>
+                <div style="margin-top:0.5rem; font-size:0.8rem;">💰 Recharge Wallet: <span class="recharge-wallet">${user.rechargeBalance.toFixed(2)} ETB</span></div>
             </div>
             <h3 style="margin:1rem 0 0 1rem;">📈 Investment Products</h3>
             <div class="products-grid" id="productsGrid"></div>
@@ -332,7 +349,7 @@
         }
     }
 
-    // Task Page
+    // Task Page with fixed daily video claim (one per day)
     function renderTaskPage() {
         let user = users.find(u => u.phone === currentUser);
         let lastVideo = user.lastVideoTaskDate ? new Date(user.lastVideoTaskDate) : null;
@@ -469,6 +486,9 @@
             if (payPass !== user.payPassword) { document.getElementById("investError").innerText = "❌ Incorrect pay password"; return; }
             if (user.balance < prod.price) { document.getElementById("investError").innerText = "❌ Insufficient balance."; return; }
             user.balance -= prod.price;
+            if (user.rechargeBalance >= prod.price) user.rechargeBalance -= prod.price;
+            else user.rechargeBalance = 0;
+            
             investments.push({
                 id: Date.now(), userPhone: currentUser, productKey, productName: prod.name, amount: prod.price,
                 startDate: new Date().toISOString(), lastIncomeDate: new Date().toISOString(), dailyRate: prod.daily,
@@ -498,7 +518,7 @@
         };
     });
 
-    // Registration with referral link handling
+    // Registration with referral link
     function getUrlParameter(name) {
         let urlParams = new URLSearchParams(window.location.search);
         return urlParams.get(name);
@@ -535,7 +555,7 @@
         let newUser = {
             phone, fullName, password: pass, payPassword: payPass,
             inviteCode: generateInviteCode(), referredBy,
-            balance: 0, wealthWallet: 0, rewardWallet: 0, totalEarnings: 0,
+            balance: 0, rechargeBalance: 0, wealthWallet: 0, rewardWallet: 0, totalEarnings: 0,
             vipLevel: 0, lastDailyBonus: null, lastVideoTaskDate: null,
             shareReferralCount: 0, shareRewardClaimed: false,
             createdAt: new Date().toISOString()
@@ -562,7 +582,7 @@
         document.getElementById("regMessage").innerText = "";
     };
 
-    // ✅ በትክክል መግቢያ እንዲሰራ የተሻሻለ ክስተት
+    // Login with ban check
     document.getElementById("doLogin").onclick = () => {
         let phone = document.getElementById("loginPhone").value.trim();
         let pass = document.getElementById("loginPassword").value;
@@ -575,11 +595,10 @@
         document.getElementById("authContainer").style.display = "none";
         document.getElementById("appContainer").style.display = "block";
         refreshAllUI();
-        // የመጀመሪያ ገጽ Home እንዲከፈት
         document.querySelector(".nav-item[data-page='home']").click();
     };
 
-    // Populate modals with proper HTML and reattach events
+    // Populate modals
     function populateModals() {
         let rechargeHtml = `<div class="modal-content"><div class="modal-header">💳 Recharge Wallet</div><p>Bank: Commercial Bank of Ethiopia</p>
             <div class="form-group"><label>Account Name</label><div style="display:flex;"><input type="text" id="bankAccountName" value="Cotton Exporter PLC" readonly><button type="button" id="copyAccountName" class="copy-btn">Copy</button></div></div>
@@ -606,7 +625,6 @@
             <button id="confirmExchange" class="btn">Exchange</button><button class="btn-outline" id="closeExchangeModal">Cancel</button></div>`;
         document.getElementById("exchangeModal").innerHTML = exchangeHtml;
 
-        // Reattach events after modals are populated
         setTimeout(() => {
             document.getElementById("confirmRecharge").onclick = () => {
                 let ft = document.getElementById("ftCode").value.trim().toUpperCase();
@@ -614,6 +632,7 @@
                 if (!ftRecord) { alert("Invalid FT code or already used."); return; }
                 let user = users.find(u => u.phone === currentUser);
                 user.balance += ftRecord.amount;
+                user.rechargeBalance += ftRecord.amount;
                 ftRecord.usedBy = currentUser;
                 addTransaction(currentUser, "recharge", ftRecord.amount, `Recharge via FT ${ft} (${ftRecord.amount} ETB)`);
                 saveData();
@@ -645,22 +664,23 @@
                 }
             };
             document.getElementById("closeWithdrawModal").onclick = () => document.getElementById("withdrawModal").style.display = "none";
-            document.getElementById("confirmInvest").onclick = () => {}; // will be set dynamically in openInvestModal
             document.getElementById("closeInvestModal").onclick = () => document.getElementById("investModal").style.display = "none";
             document.getElementById("claimGift").onclick = () => {
                 let code = document.getElementById("giftCode").value.trim().toUpperCase();
-                let gift = giftCodes.find(g => g.code === code && !g.usedBy);
-                if (!gift) alert("Invalid code");
-                else {
-                    let user = users.find(u => u.phone === currentUser);
-                    user.balance += gift.value;
-                    gift.usedBy = currentUser;
-                    addTransaction(currentUser, "gift", gift.value, `Redeemed gift code ${code}`);
-                    saveData();
-                    refreshAllUI();
-                    document.getElementById("cashGiftModal").style.display = "none";
-                    alert(`You received ${gift.value} ETB!`);
-                }
+                let gift = giftCodes.find(g => g.code === code);
+                if (!gift) { alert("Invalid code"); return; }
+                if (gift.usedBy) { alert("Code already used"); return; }
+                if (gift.active === false) { alert("This gift code is currently blocked by admin."); return; }
+                if (gift.expiresAt && new Date(gift.expiresAt) < new Date()) { alert("This gift code has expired."); return; }
+                
+                let user = users.find(u => u.phone === currentUser);
+                user.balance += gift.value;
+                gift.usedBy = currentUser;
+                addTransaction(currentUser, "gift", gift.value, `Redeemed gift code ${code}`);
+                saveData();
+                refreshAllUI();
+                document.getElementById("cashGiftModal").style.display = "none";
+                alert(`You received ${gift.value} ETB!`);
             };
             document.getElementById("closeGiftModal").onclick = () => document.getElementById("cashGiftModal").style.display = "none";
             document.getElementById("confirmExchange").onclick = () => {
@@ -684,7 +704,6 @@
 
     loadData();
     populateModals();
-    // ከሆነ ምንም ተጠቃሚ አልነበረም, አሁን የሙከራ ተጠቃሚ ተፈጥሯል
     console.log("System ready. Demo user: 0947655291 / 123456");
 </script>
 </body>
