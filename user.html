@@ -149,14 +149,14 @@
 <div id="mainCard" class="card">
     <!-- ሁነታ መምረጫ ቁልፎች -->
     <div class="mode-buttons">
-        <button id="registerModeBtn" class="mode-btn active">📝 ምዝገባ</button>
-        <button id="loginModeBtn" class="mode-btn">🔐 መግቢያ</button>
+        <button id="registerModeBtn" class="mode-btn active">📝 register</button>
+        <button id="loginModeBtn" class="mode-btn">🔐 log in</button>
     </div>
 
     <!-- የምዝገባ ሂደት (ደረጃ 1 እና 2) -->
     <div id="registerSection">
         <div id="step1" class="step active">
-            <h2>📋 ደረጃ 1: መረጃ ይሙሉ</h2>
+            <h2>📋:መረጃ በትክክል ይሙሉ</h2>
             <input type="tel" id="regPhone" placeholder="📞 09XXXXXXXX" autocomplete="off">
             <input type="text" id="regFullname" placeholder="👤 first name">
             <input type="text" id="regFathername" placeholder="👨 last name">
@@ -166,14 +166,14 @@
         </div>
 
         <div id="step2" class="step">
-            <h2>📸 ደረጃ 2: ፎቶዎን ያስገቡ</h2>
+            <h2>📸 :ፎቶ ይምረጡ</h2>
             <div class="photo-preview" id="photoPreviewArea"></div>
             <div class="photo-actions">
-                <button id="cameraFrontBtn">🤳 የፊት ካሜራ</button>
-                <button id="galleryBtn">🖼️ ከጋላሪ ምረጥ</button>
+                <button id="cameraFrontBtn">camera</button>
+                <button id="galleryBtn">🖼️ from galary</button>
             </div>
-            <button id="acceptPhotoBtn">✅ ፎቶውን ተቀበልኩ</button>
-            <button id="rejectPhotoBtn" style="background:#c0392b;">❌ ፎቶውን ውድቅ አደረኩ</button>
+            <button id="acceptPhotoBtn">✅accept photo</button>
+            <button id="rejectPhotoBtn" style="background:#c0392b;"></button>
             <div class="info-text">የፊት ካሜራ ተጠቅመው ፎቶ ያንሱ ወይም ከጋላሪ ይምረጡ።</div>
         </div>
     </div>
@@ -182,10 +182,10 @@
     <div id="loginSection" style="display: none;">
         <h2>🔐 ወደ መግቢያ ገጽ እንኳን ደህና መጡ</h2>
         <input type="tel" id="loginPhone" placeholder="📞 09XXXXXXXX">
-        <input type="password" id="loginPassword" placeholder="🔒 ፓስዋርድ">
-        <button id="doLoginBtn">🚀 ግባ</button>
+        <input type="password" id="loginPassword" placeholder="🔒 password">
+        <button id="doLoginBtn">🚀 log in</button>
         <div class="switch-text">
-            አካውንት የለም? <span id="switchToRegister">አሁን ይመዝገቡ</span>
+            no account? <span id="switchToRegister">successful registered</span>
         </div>
     </div>
 </div>
