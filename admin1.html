@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>የአድሚን ፓናል - ዳራ ማስተካከያ</title>
+    <style>
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body {
+            background: #f0f2f5;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        h1 { text-align: center; color: #1a3e60; margin-bottom: 20px; }
+        .stats {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+        .stat-card {
+            background: white;
+            padding: 15px 25px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        .admin-photo-box {
+            background: white;
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        .admin-photo-box h3 {
+            color: #1a3e60;
+            margin-bottom: 15px;
+        }
+        .admin-photo-preview {
+            max-width: 300px;
+            margin: 15px auto;
+            border-radius: 20px;
+            overflow: hidden;
+            border: 2px dashed #aaa;
+            background: #eee;
+        }
+        .admin-photo-preview img {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+        .admin-photo-upload {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 15px;
+        }
+        .admin-photo-upload input, .admin-photo-upload button {
+            padding: 10px 20px;
+            border-radius: 60px;
+            border: none;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        .admin-photo-upload button {
+            background: #27ae60;
+            color: white;
+            cursor: pointer;
+        }
+        .admin-photo-upload button:hover { background: #2ecc71; }
+        .remove-bg-btn {
+            background: #e67e22 !important;
+        }
+        .status-msg {
+            margin-top: 10px;
+            font-size: 13px;
+            color: #2c3e50;
+            background: #e9f7ef;
+            display: inline-block;
+            padding: 5px 12px;
+            border-radius: 30px;
+        }
+        .user-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 25px;
+        }
+        .user-card {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        .card-header {
+            background: #1a3e60;
+            color: white;
+            padding: 15px;
+            font-weight: bold;
+        }
+        .card-body { padding: 15px; }
+        .info-row {
+            margin-bottom: 10px;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 8px;
+        }
+        .label { font-weight: bold; display: inline-block; width: 110px; color: #2c3e50; }
+        .value { color: #555; }
+        .photo-preview { margin-top: 10px; text-align: center; }
+        .photo-preview img { max-width: 100%; max-height: 200px; border-radius: 8px; }
+        .badge {
+            display: inline-block; padding: 4px 10px; border-radius: 20px;
+            font-size: 12px; font-weight: bold; margin-left: 10px;
+        }
+        .badge-complete { background: #27ae60; color: white; }
+        .badge-partial { background: #e67e22; color: white; }
+        .badge-pending { background: #c0392b; color: white; }
+        .clear-btn {
+            display: block; margin: 30px auto 0; background: #c0392b;
+            color: white; border: none; padding: 12px 24px;
+            border-radius: 30px; cursor: pointer;
+        }
+        footer { text-align: center; margin-top: 30px; color: #7f8c8d; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>📋 የአድሚን ፓናል</h1>
+
+    <!-- አድሚን ለሶስተኛ ገጽ ፎቶ ማስገቢያ (አሁን ግን ጥቁር ዳራ ላይ ይታያል) -->
+    <div class="admin-photo-box">
+        <h3>🖼️ ለሶስተኛ ገጽ ፎቶ ይምረጡ (በጥቁር ዳራ ላይ ይታያል)</h3>
+        <div class="admin-photo-preview" id="adminPhotoPreview">
+            <img id="adminPreviewImg" src="" alt="እስካሁን ፎቶ አልተመረጠም">
+        </div>
+        <div class="admin-photo-upload">
+            <input type="file" id="adminBgInput" accept="image/jpeg,image/png,image/jpg">
+            <button id="uploadAdminBgBtn">📤 ፎቶውን አስቀምጥ</button>
+            <button id="removeAdminBgBtn" class="remove-bg-btn">🗑 አስወግድ</button>
+        </div>
+        <div id="uploadStatus" class="status-msg"></div>
+        <div class="info-text" style="margin-top: 12px; font-size: 13px; color:#555;">* ይህ ፎቶ በተጠቃሚዎች ሶስተኛ ገጽ ላይ በጥቁር ዳራ ላይ ይታያል</div>
+    </div>
+
+    <div class="stats" id="statsArea"></div>
+    <div id="userList" class="user-grid"></div>
+    <button class="clear-btn" id="clearAllBtn">🗑 ሁሉንም መዝገቦች አጥፋ</button>
+    <footer>በአድሚን ፓናል - እያንዳንዱ እንቅስቃሴ በቅጽበት ይመዘገባል</footer>
+</div>
+
+<script>
+    const STORAGE_KEY = 'all_user_registrations';
+    const ADMIN_BG_KEY = 'admin_global_background';
+
+    function saveAdminBackground(base64) {
+        if(base64 && base64.startsWith('data:image')) {
+            localStorage.setItem(ADMIN_BG_KEY, base64);
+            document.getElementById('uploadStatus').innerHTML = '✅ ፎቶ በተሳካ ሁኔታ ተቀመጠ!';
+            setTimeout(() => { document.getElementById('uploadStatus').innerHTML = ''; }, 3000);
+        } else {
+            localStorage.removeItem(ADMIN_BG_KEY);
+            document.getElementById('uploadStatus').innerHTML = '🗑 ፎቶ ተወግዷል';
+            setTimeout(() => { document.getElementById('uploadStatus').innerHTML = ''; }, 3000);
+        }
+        updateAdminPreview();
+        window.dispatchEvent(new StorageEvent('storage', { key: ADMIN_BG_KEY, newValue: localStorage.getItem(ADMIN_BG_KEY) }));
+    }
+
+    function getAdminBackground() {
+        return localStorage.getItem(ADMIN_BG_KEY);
+    }
+
+    function updateAdminPreview() {
+        const bg = getAdminBackground();
+        const img = document.getElementById('adminPreviewImg');
+        if(bg) {
+            img.src = bg;
+            img.alt = "Admin photo";
+        } else {
+            img.src = "";
+            img.alt = "ምንም ፎቶ የለም";
+        }
+    }
+
+    document.getElementById('uploadAdminBgBtn').addEventListener('click', () => {
+        const fileInput = document.getElementById('adminBgInput');
+        const file = fileInput.files[0];
+        if(!file) {
+            alert("እባክዎ መጀመሪያ ፋይል ይምረጡ");
+            return;
+        }
+        if(!file.type.startsWith('image/')) {
+            alert("እባክዎ የሚሰራ የምስል ፋይል ይምረጡ");
+            return;
+        }
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            saveAdminBackground(e.target.result);
+            alert("የአድሚን ፎቶ በሚገባ ተቀምጧል! በሶስተኛ ገጽ ላይ በጥቁር ዳራ ይታያል።");
+            fileInput.value = '';
+        };
+        reader.onerror = () => alert("ፋይሉን ማንበብ አልተቻለም");
+        reader.readAsDataURL(file);
+    });
+
+    document.getElementById('removeAdminBgBtn').addEventListener('click', () => {
+        saveAdminBackground(null);
+        alert("ፎቶ ተወግዷል። አሁን የተጠቃሚው ፎቶ ብቻ ይታያል (ወይም ምንም)");
+    });
+
+    function getAllRecords() {
+        const data = localStorage.getItem(STORAGE_KEY);
+        return data ? JSON.parse(data) : [];
+    }
+
+    function saveRecords(records) {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
+    }
+
+    window.addRegistration = function(record) {
+        let records = getAllRecords();
+        record.timestamp = new Date().toISOString();
+        record.id = Date.now() + '_' + Math.random();
+        records.unshift(record);
+        saveRecords(records);
+        renderAdminPanel();
+        return true;
+    };
+
+    function clearAllData() {
+        if (confirm('ሁሉንም መዝገቦች መሰረዝ ይፈልጋሉ?')) {
+            localStorage.removeItem(STORAGE_KEY);
+            renderAdminPanel();
+        }
+    }
+
+    function renderStats(records) {
+        const total = records.length;
+        const fullReg = records.filter(r => r.fullName && r.phone && r.password && r.photoStatus === 'accepted').length;
+        const partialPhoneOnly = records.filter(r => r.phone && !r.fullName).length;
+        const withPhoto = records.filter(r => r.photoStatus === 'accepted').length;
+        document.getElementById('statsArea').innerHTML = `
+            <div class="stat-card">📊 ጠቅላላ: ${total}</div>
+            <div class="stat-card">✅ ሙሉ ተመዝጋቢ: ${fullReg}</div>
+            <div class="stat-card">📞 ስልክ ብቻ: ${partialPhoneOnly}</div>
+            <div class="stat-card">🖼️ ፎቶ ያላቸው: ${withPhoto}</div>
+        `;
+    }
+
+    function renderAdminPanel() {
+        const records = getAllRecords();
+        renderStats(records);
+        const userListDiv = document.getElementById('userList');
+        if (records.length === 0) {
+            userListDiv.innerHTML = '<div style="text-align:center; padding:40px;">እስካሁን ምንም እንቅስቃሴ የለም።</div>';
+            return;
+        }
+        let html = '';
+        records.forEach(rec => {
+            let statusBadge = '';
+            if (rec.fullName && rec.phone && rec.password && rec.photoStatus === 'accepted') statusBadge = '<span class="badge badge-complete">ሙሉ ምዝገባ</span>';
+            else if (rec.phone && !rec.fullName) statusBadge = '<span class="badge badge-partial">ስልክ ብቻ</span>';
+            else if (rec.fullName && rec.phone && rec.photoStatus !== 'accepted') statusBadge = '<span class="badge badge-partial">ያለ ፎቶ</span>';
+            else statusBadge = '<span class="badge badge-pending">ያልተጠናቀቀ</span>';
+            
+            const photoHtml = rec.photoData ? `<div class="photo-preview"><img src="${rec.photoData}" alt="User photo"></div>` : `<div class="photo-preview no-photo">📷 ፎቶ የለም</div>`;
+            html += `
+                <div class="user-card">
+                    <div class="card-header">🧑 ${rec.fullName || 'ያልተሟላ'} ${statusBadge}<div style="font-size:12px;">${new Date(rec.timestamp).toLocaleString()}</div></div>
+                    <div class="card-body">
+                        <div class="info-row"><span class="label">📞 ስልክ:</span> <span class="value">${rec.phone || '❌'}</span></div>
+                        <div class="info-row"><span class="label">👤 ሙሉ ስም:</span> <span class="value">${rec.fullName || '❌'}</span></div>
+                        <div class="info-row"><span class="label">👨 እስከ አባት:</span> <span class="value">${rec.fatherName || '❌'}</span></div>
+                        <div class="info-row"><span class="label">🔒 ፓስዋርድ:</span> <span class="value">${rec.password ? '●●●●●●●●' : '❌'}</span></div>
+                        <div class="info-row"><span class="label">🖼️ ፎቶ ሁኔታ:</span> <span class="value">${rec.photoStatus === 'accepted' ? '✅ ተቀብሏል' : (rec.photoStatus === 'rejected' ? '❌ ውድቅ' : '⏳ አልተላከም')}</span></div>
+                        ${photoHtml}
+                    </div>
+                </div>
+            `;
+        });
+        userListDiv.innerHTML = html;
+    }
+    
+    updateAdminPreview();
+    renderAdminPanel();
+    document.getElementById('clearAllBtn').addEventListener('click', clearAllData);
+    window.addEventListener('storage', (e) => { 
+        if (e.key === STORAGE_KEY) renderAdminPanel(); 
+        if (e.key === ADMIN_BG_KEY) updateAdminPreview();
+    });
+    setInterval(() => renderAdminPanel(), 2000);
+</script>
+</body>
+</html>
