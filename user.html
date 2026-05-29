@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>ምዝገባ እና መግቢያ - ጥቁር ዳራ ላይ ፎቶ</title>
+    <title>ምዝገባ - ጥቁር ዳራ ላይ ፎቶ</title>
     <style>
         * { margin:0; padding:0; box-sizing:border-box; }
         body {
@@ -22,7 +22,6 @@
             border-radius: 36px;
             padding: 30px 25px;
             box-shadow: 0 25px 45px rgba(0,0,0,0.2);
-            transition: 0.3s;
         }
         .mode-buttons {
             display: flex;
@@ -32,13 +31,11 @@
         .mode-btn {
             flex: 1;
             background: #e0e0e0;
-            color: #333;
             border: none;
             padding: 12px;
             border-radius: 60px;
             font-weight: bold;
             cursor: pointer;
-            transition: 0.2s;
         }
         .mode-btn.active {
             background: #1a3e60;
@@ -53,33 +50,19 @@
         }
         button {
             background: #1a3e60; color: white; border: none; font-weight: bold;
-            cursor: pointer; transition: 0.2s;
+            cursor: pointer;
         }
-        button:hover { background: #0e2a42; transform: scale(0.98); }
+        button:active { transform: scale(0.98); }
         .photo-actions { display: flex; gap: 12px; margin: 10px 0; }
         .photo-actions button { flex:1; background: #2c3e50; }
-        .photo-preview { text-align: center; margin: 15px 0; }
-        .photo-preview img { max-width:100%; max-height:220px; border-radius:28px; border:2px solid #ccc; }
+        .photo-preview { text-align: center; margin: 15px 0; min-height: 150px; background: #f5f5f5; border-radius: 20px; display: flex; align-items: center; justify-content: center; }
+        .photo-preview img { max-width:100%; max-height:200px; border-radius: 20px; }
         .message {
             position: fixed; bottom: 20px; left: 20px; right: 20px; z-index: 100;
-            text-align: center; font-weight: bold; padding: 10px; border-radius: 50px;
+            text-align: center; font-weight: bold; padding: 12px; border-radius: 50px;
         }
         .success { background: #d4edda; color: #155724; }
         .error { background: #f8d7da; color: #721c24; }
-        .info-text { font-size: 13px; color: #6c757d; text-align: center; margin-top: 10px; }
-        .switch-text {
-            text-align: center;
-            margin-top: 15px;
-            font-size: 14px;
-        }
-        .switch-text span {
-            color: #1a3e60;
-            cursor: pointer;
-            font-weight: bold;
-            text-decoration: underline;
-        }
-        
-        /* ሶስተኛ ገጽ - ጥቁር ዳራ እና መሃል ላይ ፎቶ */
         .third-page-full {
             position: fixed;
             top: 0;
@@ -92,56 +75,35 @@
             justify-content: center;
             align-items: center;
             z-index: 1000;
-            overflow-y: auto;
         }
         .photo-frame {
-            background: rgba(30,30,30,0.9);
+            background: #1e1e1e;
             padding: 20px;
             border-radius: 40px;
             margin: 20px;
-            max-width: 90%;
-            box-shadow: 0 0 30px rgba(255,255,255,0.1);
         }
         .photo-frame img {
-            max-width: 100%;
-            max-height: 55vh;
+            max-width: 90vw;
+            max-height: 50vh;
             border-radius: 24px;
-            display: block;
-            margin: 0 auto;
-            border: 3px solid #fff;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+            border: 3px solid white;
         }
         .third-content {
-            background: rgba(0, 0, 0, 0.85);
-            backdrop-filter: blur(8px);
-            padding: 25px 20px;
+            background: rgba(0,0,0,0.85);
+            padding: 25px;
             border-radius: 60px;
             text-align: center;
-            max-width: 90%;
-            margin: 15px;
-            border: 1px solid rgba(255,255,255,0.2);
-        }
-        .third-content h2 { 
-            color: #ffeb3b; 
-            font-size: 1.8rem; 
-            margin-bottom: 15px; 
-            text-shadow: 2px 2px 4px black;
-        }
-        .third-content p { 
-            color: white; 
-            font-size: 1.2rem; 
-            margin: 15px 0; 
-            line-height: 1.4;
+            color: white;
         }
         .telegram-link {
-            display: inline-flex; align-items: center; gap: 12px;
-            background: #0088cc; padding: 12px 28px; border-radius: 50px;
-            text-decoration: none; color: white; font-weight: bold; font-size: 1.1rem;
-            margin-top: 15px; transition: 0.2s; border: 2px solid white;
+            display: inline-block;
+            background: #0088cc;
+            padding: 12px 28px;
+            border-radius: 50px;
+            color: white;
+            text-decoration: none;
+            margin-top: 15px;
         }
-        .telegram-link:hover { background: #006699; transform: scale(1.02); }
-        .telegram-link img { width: 28px; filter: drop-shadow(0 2px 2px rgba(0,0,0,0.2)); }
-        .small-note { color: #ccc; margin-top: 25px; font-size: 0.75rem; }
     </style>
 </head>
 <body>
@@ -152,33 +114,30 @@
         <button id="loginModeBtn" class="mode-btn">🔐 log in</button>
     </div>
 
-    <!-- የምዝገባ ሂደት (ደረጃ 1 እና 2) -->
     <div id="registerSection">
         <div id="step1" class="step active">
-            <h1>📋 መረጃ በትክክል ይሙሉ</h1>  
-            <input type="tel" id="regPhone" placeholder="📞 09XXXXXXXX" autocomplete="off">
-            <input type="text" id="regFullname" placeholder="👤first name">
-            <input type="text" id="regFathername" placeholder="👨 last name">
-            <input type="password" id="regPassword" placeholder="🔒 ፓስወርድ">
-            <button id="submitRegisterStep1">✅ ok</button>
-            <div class="info-text"></div>
+            <h3>📋 መረጃ ይሙሉ</h3>  
+            <input type="tel" id="regPhone" placeholder="📞 09XXXXXXXX">
+            <input type="text" id="regFullname" placeholder="👤 ስም">
+            <input type="text" id="regFathername" placeholder="👨 የአባት ስም">
+            <input type="password" id="regPassword" placeholder="🔒 ፓስወርድ (ቁጥር ብቻ)">
+            <button id="submitRegisterStep1">✅ ቀጥል</button>
         </div>
 
         <div id="step2" class="step">
-            <h1>📸 ፎቶ ይምረጡ</h1> 
-            <div class="photo-preview" id="photoPreviewArea"></div>
+            <h3>📸 ፎቶ ይምረጡ</h3> 
+            <div class="photo-preview" id="photoPreviewArea">📸 ካሜራ ወይም ጋላሪ ይጫኑ</div>
             <div class="photo-actions">
-                <button id="cameraFrontBtn">📸 ካሜራ</button>
+                <button id="cameraFrontBtn">📸 ካሜራ (ፊት)</button>
                 <button id="galleryBtn">🖼️ ከጋላሪ</button>
             </div>
             <button id="acceptPhotoBtn">✅ ፎቶ ተቀበል</button>
-            <div class="info-text">የፊት ካሜራ ተጠቅመው ፎቶ ያንሱ ወይም ከጋላሪ ይምረጡ።</div>
+            <div class="info-text">ፎቶ ከመረጡ በኋላ ይህን ቁልፍ ይጫኑ።</div>
         </div>
     </div>
 
-    <!-- የመግቢያ ሂደት -->
     <div id="loginSection" style="display: none;">
-        <h2>🔐 ወደ መግቢያ ገጽ እንኳን ደህና መጡ</h2>
+        <h3>🔐 መግቢያ</h3>
         <input type="tel" id="loginPhone" placeholder="📞 09XXXXXXXX">
         <input type="password" id="loginPassword" placeholder="🔒 ፓስወርድ">
         <button id="doLoginBtn">🚀 ግባ</button>
@@ -188,22 +147,30 @@
 <div id="globalMessage" class="message"></div>
 
 <script>
-    const STORAGE_KEY = 'all_user_registrations';
+    const STORAGE_KEY = 'user_data_fixed';
+    let tempRegData = { phone:'', fullName:'', fatherName:'', password:'', photoData:null };
+    let currentPhotoData = null;
 
-    // የሙከራ ተጠቃሚ (0947655291 / 123456) ካለ ሙሉ በሙሉ ማስወገድ
-    function clearDemoUser() {
-        let existing = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
-        const filtered = existing.filter(rec => !(rec.phone === '0947655291' && rec.password === '123456'));
-        if (filtered.length !== existing.length) {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(filtered));
-            console.log('የሙከራ ተጠቃሚ ተወግዷል');
-        }
+    // Helper functions
+    function showMessage(msg, isSuccess=true) {
+        const msgDiv = document.getElementById('globalMessage');
+        msgDiv.textContent = msg;
+        msgDiv.className = 'message ' + (isSuccess ? 'success' : 'error');
+        setTimeout(() => msgDiv.className = 'message', 4000);
     }
 
-    let tempRegData = { phone:'', fullName:'', fatherName:'', password:'', step1Completed:false, photoData:null, photoStatus:null };
-    let currentPhotoData = null;
-    let currentMode = 'register';
+    function validatePhone(p) { return /^09\d{8}$/.test(p); }
+    function validatePassword(p) { return /^\d+$/.test(p); }
+    function validateName(n) { return n.trim().length >= 2; }
 
+    // Save to localStorage
+    function saveUser(userObj) {
+        let all = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+        all.push({ ...userObj, timestamp: new Date().toISOString() });
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(all));
+    }
+
+    // Mode switching
     const registerModeBtn = document.getElementById('registerModeBtn');
     const loginModeBtn = document.getElementById('loginModeBtn');
     const registerSection = document.getElementById('registerSection');
@@ -211,7 +178,6 @@
     const switchToRegister = document.getElementById('switchToRegister');
 
     function setMode(mode) {
-        currentMode = mode;
         if (mode === 'register') {
             registerSection.style.display = 'block';
             loginSection.style.display = 'none';
@@ -224,210 +190,119 @@
             loginModeBtn.classList.add('active');
         }
     }
+    registerModeBtn.onclick = () => setMode('register');
+    loginModeBtn.onclick = () => setMode('login');
+    if(switchToRegister) switchToRegister.onclick = () => setMode('register');
 
-    registerModeBtn.addEventListener('click', () => setMode('register'));
-    loginModeBtn.addEventListener('click', () => setMode('login'));
-    if (switchToRegister) switchToRegister.addEventListener('click', () => setMode('register'));
+    // Step 1 submit
+    document.getElementById('submitRegisterStep1').onclick = () => {
+        const phone = document.getElementById('regPhone').value.trim();
+        const fullName = document.getElementById('regFullname').value.trim();
+        const fatherName = document.getElementById('regFathername').value.trim();
+        const password = document.getElementById('regPassword').value;
 
-    function sendToAdminPanel(recordObj) {
-        let existing = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
-        const newEntry = { ...recordObj, timestamp: new Date().toISOString(), id: Date.now()+'_'+Math.random() };
-        existing.unshift(newEntry);
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(existing));
-        window.dispatchEvent(new StorageEvent('storage', { key: STORAGE_KEY, newValue: JSON.stringify(existing) }));
-    }
+        if(!validatePhone(phone)) return showMessage("ስልክ 09XXXXXXXX መሆን አለበት", false);
+        if(!validateName(fullName)) return showMessage("ስም ያስገቡ", false);
+        if(!validateName(fatherName)) return showMessage("የአባት ስም ያስገቡ", false);
+        if(!validatePassword(password)) return showMessage("ፓስወርድ ቁጥር ብቻ ይሁን", false);
 
-    function showMessage(msg, isSuccess=true) {
-        const msgDiv = document.getElementById('globalMessage');
-        msgDiv.textContent = msg;
-        msgDiv.className = 'message ' + (isSuccess ? 'success' : 'error');
-        setTimeout(() => { if(msgDiv) msgDiv.className = 'message'; }, 3500);
-    }
-
-    function validatePhone(phone) { return /^09\d{8}$/.test(phone); }
-    function validatePassword(password) { return /^\d+$/.test(password); }
-    function validateName(name) { return name.trim().length >= 2 && /[a-zA-Z\u1200-\u137F]/.test(name); }
-
-    const regPhone = document.getElementById('regPhone');
-    const regFullname = document.getElementById('regFullname');
-    const regFathername = document.getElementById('regFathername');
-    const regPassword = document.getElementById('regPassword');
-
-    let phoneDebounce;
-    regPhone.addEventListener('input', function(e) {
-        clearTimeout(phoneDebounce);
-        phoneDebounce = setTimeout(() => {
-            let phoneVal = e.target.value.trim();
-            if(phoneVal.length >= 7 && validatePhone(phoneVal)) {
-                sendToAdminPanel({ phone:phoneVal, fullName:'', fatherName:'', password:'', photoStatus:null, photoData:null, step:'phone_only' });
-                showMessage(`📞 ስልክ ${phoneVal} ተመዝግቧል`, true);
-            } else if(phoneVal.length >= 7 && !validatePhone(phoneVal)) {
-                showMessage("ስልክ ቁጥር በ09 መጀመር እና 10 አሃዝ መሆን አለበት", false);
-            }
-        }, 500);
-    });
-
-    document.getElementById('submitRegisterStep1').addEventListener('click', function() {
-        const phone = regPhone.value.trim();
-        const fullName = regFullname.value.trim();
-        const fatherName = regFathername.value.trim();
-        const password = regPassword.value;
-
-        if(!validatePhone(phone)) {
-            showMessage("ስልክ ቁጥር በ09 መጀመር እና 10 አሃዝ መሆን አለበት", false);
-            return;
-        }
-        if(!validateName(fullName)) {
-            showMessage("እባክዎ ሙሉ ስምዎን ቢያንስ 2 ፊደላት ያስገቡ", false);
-            return;
-        }
-        if(password && !validatePassword(password)) {
-            showMessage("ፓስዋርድ ቁጥር ብቻ መሆን አለበት", false);
-            return;
-        }
-        if(fatherName && !validateName(fatherName)) {
-            showMessage("የአባት ስም ቢያንስ 2 ፊደላት መሆን አለበት", false);
-            return;
-        }
-
-        tempRegData = { phone, fullName, fatherName, password, step1Completed:true, photoData: null, photoStatus: null };
-        sendToAdminPanel({ phone, fullName, fatherName, password, photoStatus:null, photoData:null, step:'after_step1' });
-        showMessage(`🎉 እንኳን ደስ ያለዎት ${fullName}! በመጀመሪያ ደረጃ ተመዝግበዋል። አሁን ፎቶ ይላኩ`, true);
-        
+        tempRegData = { phone, fullName, fatherName, password, photoData: null };
+        showMessage(`እንኳን ደስ ያለዎት ${fullName}! አሁን ፎቶ ይምረጡ`, true);
         document.getElementById('step1').classList.remove('active');
         document.getElementById('step2').classList.add('active');
-        document.getElementById('photoPreviewArea').innerHTML = '<div>📸 ከላይ ካሜራ ወይም ጋላሪ ይጫኑ</div>';
         currentPhotoData = null;
-    });
+        document.getElementById('photoPreviewArea').innerHTML = '📸 ካሜራ ወይም ጋላሪ ይጫኑ';
+    };
 
-    function showPhotoPreview(dataUrl) {
-        document.getElementById('photoPreviewArea').innerHTML = `<img src="${dataUrl}" alt="Preview">`;
+    // Camera & Gallery
+    function handleFile(file) {
+        if(!file) return;
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            currentPhotoData = e.target.result;
+            document.getElementById('photoPreviewArea').innerHTML = `<img src="${currentPhotoData}" alt="preview">`;
+            showMessage("ፎቶ ተመርጧል! 'ፎቶ ተቀበል' ይጫኑ", true);
+            console.log("Photo data stored, length:", currentPhotoData.length);
+        };
+        reader.readAsDataURL(file);
     }
 
-    function triggerFrontCamera() {
-        const input = document.createElement('input');
+    document.getElementById('cameraFrontBtn').onclick = () => {
+        let input = document.createElement('input');
         input.type = 'file';
         input.accept = 'image/*';
         input.capture = 'user';
-        input.onchange = (e) => {
-            const file = e.target.files[0];
-            if(file) {
-                const reader = new FileReader();
-                reader.onload = (ev) => { currentPhotoData = ev.target.result; showPhotoPreview(currentPhotoData); };
-                reader.readAsDataURL(file);
-            }
-        };
+        input.onchange = (e) => handleFile(e.target.files[0]);
         input.click();
-    }
-    function triggerGallery() {
-        const input = document.createElement('input');
+    };
+    document.getElementById('galleryBtn').onclick = () => {
+        let input = document.createElement('input');
         input.type = 'file';
         input.accept = 'image/*';
-        input.onchange = (e) => {
-            const file = e.target.files[0];
-            if(file) {
-                const reader = new FileReader();
-                reader.onload = (ev) => { currentPhotoData = ev.target.result; showPhotoPreview(currentPhotoData); };
-                reader.readAsDataURL(file);
-            }
-        };
+        input.onchange = (e) => handleFile(e.target.files[0]);
         input.click();
-    }
-    document.getElementById('cameraFrontBtn').addEventListener('click', triggerFrontCamera);
-    document.getElementById('galleryBtn').addEventListener('click', triggerGallery);
+    };
 
-    // Accept Photo Button - fully enhanced
-    document.getElementById('acceptPhotoBtn').addEventListener('click', function() {
+    // ACCEPT PHOTO BUTTON - FIXED with explicit check and debug
+    const acceptBtn = document.getElementById('acceptPhotoBtn');
+    acceptBtn.onclick = function() {
+        console.log("Accept button clicked. currentPhotoData =", currentPhotoData ? "exists" : "null");
         if(!currentPhotoData) {
-            showMessage("እባክዎ መጀመሪያ ፎቶ ያንሱ ወይም ይምረጡ", false);
+            showMessage("እባክዎ መጀመሪያ ፎቶ ይምረጡ (ካሜራ ወይም ጋላሪ)", false);
             return;
         }
+        // Save all data
         tempRegData.photoData = currentPhotoData;
-        tempRegData.photoStatus = 'accepted';
-        sendToAdminPanel({ 
-            phone: tempRegData.phone, 
-            fullName: tempRegData.fullName, 
-            fatherName: tempRegData.fatherName, 
-            password: tempRegData.password, 
-            photoStatus: 'accepted', 
-            photoData: currentPhotoData, 
-            step: 'complete_with_photo' 
-        });
-        showMessage(`✅ ምዝገባዎ ተሟልቷል! ፎቶዎ ተቀብሏል። እንኳን ደስ ያለዎት!`, true);
-        showThirdPageWithBlackBackground();
-    });
-
-    function showThirdPageWithBlackBackground() {
-        const mainCard = document.getElementById('mainCard');
-        if(mainCard) mainCard.style.display = 'none';
+        saveUser(tempRegData);
+        showMessage("ምዝገባ ተሟልቷል! ወደ ማጠናቀቂያ ገጽ እየወሰድንዎት ነው...", true);
         
-        let displayPhoto = tempRegData.photoData || null;
+        // Show third page (black background with photo)
+        const mainCard = document.getElementById('mainCard');
+        mainCard.style.display = 'none';
         
         const thirdDiv = document.createElement('div');
         thirdDiv.className = 'third-page-full';
-        
-        let photoHtml = '';
-        if(displayPhoto) {
-            photoHtml = `<div class="photo-frame"><img src="${displayPhoto}" alt="Photo"></div>`;
-        } else {
-            photoHtml = `<div class="photo-frame" style="background: #222; padding: 20px;"><p style="color:white;">ምንም ፎቶ አልተገኘም</p></div>`;
-        }
-        
         thirdDiv.innerHTML = `
-            ${photoHtml}
+            <div class="photo-frame">
+                <img src="${tempRegData.photoData}" alt="User Photo">
+            </div>
             <div class="third-content">
-                <h2>🎉 እንኳን ደስ ያለዎት! 🎉</h2>
-                <p>✨ ምዝገባዎ ተሳክቷል ✨<br>
-                አሁን ቴሌግራማችንን በመቀላቀል ጥያቄዎችን በመስራት ለፈተና ይዘጋጁ!</p>
-                <a href="https://t.me/+HIDAQtssqFI4MDFk" target="_blank" class="telegram-link">
-                    <img src="https://upload.wikimedia.org/wikipedia/commons/8/82/Telegram_logo.svg" alt="T.G" width="28" height="28">
-                    📢 ቴሌግራም ቻናላችንን ይቀላቀሉ
-                </a>
+                <h2>🎉 እንኳን ደስ ያለዎት!</h2>
+                <p>ምዝገባዎ ተሳክቷል። ቴሌግራማችንን ይቀላቀሉ</p>
+                <a href="https://t.me/+HIDAQtssqFI4MDFk" target="_blank" class="telegram-link">📢 ቴሌግራም ቻናል</a>
             </div>
         `;
         document.body.appendChild(thirdDiv);
-    }
+    };
 
-    // ----- የመግቢያ (Login) ተግባር -----
-    function findUserByPhoneAndPassword(phone, password) {
-        const records = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
-        return records.find(rec => rec.phone === phone && rec.password === password && rec.step === 'complete_with_photo');
-    }
-
-    document.getElementById('doLoginBtn').addEventListener('click', function() {
+    // Login logic
+    document.getElementById('doLoginBtn').onclick = () => {
         const phone = document.getElementById('loginPhone').value.trim();
-        const password = document.getElementById('loginPassword').value;
-        
-        if(!validatePhone(phone)) {
-            showMessage("እባክዎ ትክክለኛ ስልክ ቁጥር ያስገቡ (09XXXXXXXX)", false);
-            return;
-        }
-        if(!password) {
-            showMessage("እባክዎ ፓስዋርድዎን ያስገቡ", false);
-            return;
-        }
-        
-        const user = findUserByPhoneAndPassword(phone, password);
-        if(user) {
-            showMessage(`✅ እንኳን ደህና መጡ! አካውንትዎ ተመዝግቧል። ወደ መግቢያ ገጽ እየዘዋወሩ ነው...`, true);
-            tempRegData = {
-                phone: user.phone,
-                fullName: user.fullName,
-                fatherName: user.fatherName,
-                password: user.password,
-                step1Completed: true,
-                photoData: user.photoData,
-                photoStatus: user.photoStatus
-            };
-            showThirdPageWithBlackBackground();
+        const pwd = document.getElementById('loginPassword').value;
+        const allUsers = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+        const found = allUsers.find(u => u.phone === phone && u.password === pwd && u.photoData);
+        if(found) {
+            tempRegData = found;
+            showMessage("ገብተዋል! እንኳን ደህና መጡ", true);
+            const mainCard = document.getElementById('mainCard');
+            mainCard.style.display = 'none';
+            const thirdDiv = document.createElement('div');
+            thirdDiv.className = 'third-page-full';
+            thirdDiv.innerHTML = `
+                <div class="photo-frame"><img src="${found.photoData}" alt="Photo"></div>
+                <div class="third-content"><h2>👋 እንኳን ደህና መጡ ወደ ኋላ!</h2>
+                <a href="https://t.me/+HIDAQtssqFI4MDFk" target="_blank" class="telegram-link">📢 ቴሌግራም ቻናል</a></div>
+            `;
+            document.body.appendChild(thirdDiv);
         } else {
-            showMessage("❌ የስልክ ቁጥር ወይም ፓስዋርድ ትክክል አይደለም። እባክዎ ይመዝገቡ ወይም እንደገና ይሞክሩ።", false);
+            showMessage("ስልክ ወይም ፓስወርድ ተሳስቷል ወይም ምዝገባ አልተጠናቀቀም", false);
         }
-    });
+    };
 
-    // ማስጀመሪያ: የሙከራ ተጠቃሚ ካለ ማስወገድ እና ሁነታ ማስቀመጥ
-    clearDemoUser();
-    if(!localStorage.getItem(STORAGE_KEY)) localStorage.setItem(STORAGE_KEY, JSON.stringify([]));
+    // Initial load: clear any demo data
+    let existing = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+    const cleaned = existing.filter(u => !(u.phone === '0947655291' && u.password === '123456'));
+    if(cleaned.length !== existing.length) localStorage.setItem(STORAGE_KEY, JSON.stringify(cleaned));
     setMode('register');
 </script>
 </body>
