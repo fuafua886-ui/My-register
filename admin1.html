@@ -3,7 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>የአድሚን ፓናል - ዳራ ማስተካከያ</title>
+    <title>የአድሚን ፓናል - Firebase ስሪት</title>
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
     <style>
         * { margin:0; padding:0; box-sizing:border-box; }
         body {
@@ -39,10 +42,6 @@
             box-shadow: 0 4px 12px rgba(0,0,0,0.1);
             text-align: center;
         }
-        .admin-photo-box h3 {
-            color: #1a3e60;
-            margin-bottom: 15px;
-        }
         .admin-photo-preview {
             max-width: 300px;
             margin: 15px auto;
@@ -50,6 +49,10 @@
             overflow: hidden;
             border: 2px dashed #aaa;
             background: #eee;
+            min-height: 150px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
         .admin-photo-preview img {
             width: 100%;
@@ -69,24 +72,14 @@
             border: none;
             font-weight: bold;
             font-size: 14px;
+            cursor: pointer;
         }
         .admin-photo-upload button {
             background: #27ae60;
             color: white;
-            cursor: pointer;
         }
-        .admin-photo-upload button:hover { background: #2ecc71; }
         .remove-bg-btn {
             background: #e67e22 !important;
-        }
-        .status-msg {
-            margin-top: 10px;
-            font-size: 13px;
-            color: #2c3e50;
-            background: #e9f7ef;
-            display: inline-block;
-            padding: 5px 12px;
-            border-radius: 30px;
         }
         .user-grid {
             display: grid;
@@ -120,57 +113,79 @@
             font-size: 12px; font-weight: bold; margin-left: 10px;
         }
         .badge-complete { background: #27ae60; color: white; }
-        .badge-partial { background: #e67e22; color: white; }
-        .badge-pending { background: #c0392b; color: white; }
         .clear-btn {
             display: block; margin: 30px auto 0; background: #c0392b;
             color: white; border: none; padding: 12px 24px;
             border-radius: 30px; cursor: pointer;
+        }
+        .status-msg {
+            margin-top: 10px;
+            font-size: 13px;
+            padding: 5px 12px;
+            border-radius: 30px;
+            display: inline-block;
         }
         footer { text-align: center; margin-top: 30px; color: #7f8c8d; }
     </style>
 </head>
 <body>
 <div class="container">
-    <h1>📋 የአድሚን ፓናል</h1>
+    <h1>📋 የአድሚን ፓናል (Firebase)</h1>
 
-    <!-- አድሚን ለሶስተኛ ገጽ ፎቶ ማስገቢያ (አሁን ግን ጥቁር ዳራ ላይ ይታያል) -->
+    <!-- አድሚን ለሶስተኛ ገጽ ፎቶ ማስገቢያ -->
     <div class="admin-photo-box">
-        <h3>🖼️ ለሶስተኛ ገጽ ፎቶ ይምረጡ (በጥቁር ዳራ ላይ ይታያል)</h3>
+        <h3>🖼️ ለሶስተኛ ገጽ ፎቶ ይምረጡ</h3>
         <div class="admin-photo-preview" id="adminPhotoPreview">
-            <img id="adminPreviewImg" src="" alt="እስካሁን ፎቶ አልተመረጠም">
+            <img id="adminPreviewImg" src="" alt="ምንም ፎቶ አልተመረጠም" style="max-width:100%;">
         </div>
         <div class="admin-photo-upload">
             <input type="file" id="adminBgInput" accept="image/jpeg,image/png,image/jpg">
-            <button id="uploadAdminBgBtn">📤ፎቶውን አስቀምጥ</button>
+            <button id="uploadAdminBgBtn">📤 ፎቶውን አስቀምጥ</button>
             <button id="removeAdminBgBtn" class="remove-bg-btn">🗑 አስወግድ</button>
         </div>
         <div id="uploadStatus" class="status-msg"></div>
-        <div class="info-text" style="margin-top: 12px; font-size: 13px; color:#555;">* ይህ ፎቶ በተጠቃሚዎች ሶስተኛ ገጽ ላይ በጥቁር ዳራ ላይ ይታያል</div>
     </div>
 
     <div class="stats" id="statsArea"></div>
     <div id="userList" class="user-grid"></div>
-    <button class="clear-btn" id="clearAllBtn">🗑 ሁሉንም መዝገቦች አጥፋ</button>
-    <footer>በአድሚን ፓናል - እያንዳንዱ እንቅስቃሴ በቅጽበት ይመዘገባል</footer>
+    <button class="clear-btn" id="clearAllBtn">🗑 ሁሉንም መዝገቦች አጥፋ (Firestore)</button>
+    <footer>በአድሚን ፓናል - ሁሉም ተመዝጋቢዎች እዚህ ይታያሉ</footer>
 </div>
 
 <script>
-    const STORAGE_KEY = 'all_user_registrations';
+    // ========== FIREBASE CONFIGURATION ==========
+    const firebaseConfig = {
+        apiKey: "AIzaSyAgIAS0hWRkZlg38kKH7O6V0JXg__j2zE8",
+        authDomain: "my-user-system-13ec2.firebaseapp.com",
+        projectId: "my-user-system-13ec2",
+        storageBucket: "my-user-system-13ec2.firebasestorage.app",
+        messagingSenderId: "388651452442",
+        appId: "1:388651452442:web:9eb39716c680a8e66ca9a3",
+        measurementId: "G-N05W17L3HN"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
     const ADMIN_BG_KEY = 'admin_global_background';
 
+    // የአስተዳዳሪ ፎቶ ማስቀመጫ ተግባራት
     function saveAdminBackground(base64) {
         if(base64 && base64.startsWith('data:image')) {
             localStorage.setItem(ADMIN_BG_KEY, base64);
-            document.getElementById('uploadStatus').innerHTML = '✅ ፎቶ በተሳካ ሁኔታ ተቀመጠ!';
-            setTimeout(() => { document.getElementById('uploadStatus').innerHTML = ''; }, 3000);
+            const statusDiv = document.getElementById('uploadStatus');
+            statusDiv.innerHTML = '✅ ፎቶ በተሳካ ሁኔታ ተቀመጠ!';
+            statusDiv.style.backgroundColor = '#d4edda';
+            statusDiv.style.color = '#155724';
+            setTimeout(() => { statusDiv.innerHTML = ''; statusDiv.style.backgroundColor = ''; }, 3000);
         } else {
             localStorage.removeItem(ADMIN_BG_KEY);
-            document.getElementById('uploadStatus').innerHTML = '🗑 ፎቶ ተወግዷል';
-            setTimeout(() => { document.getElementById('uploadStatus').innerHTML = ''; }, 3000);
+            const statusDiv = document.getElementById('uploadStatus');
+            statusDiv.innerHTML = '🗑 ፎቶ ተወግዷል';
+            statusDiv.style.backgroundColor = '#f8d7da';
+            statusDiv.style.color = '#721c24';
+            setTimeout(() => { statusDiv.innerHTML = ''; statusDiv.style.backgroundColor = ''; }, 3000);
         }
         updateAdminPreview();
-        window.dispatchEvent(new StorageEvent('storage', { key: ADMIN_BG_KEY, newValue: localStorage.getItem(ADMIN_BG_KEY) }));
     }
 
     function getAdminBackground() {
@@ -182,14 +197,18 @@
         const img = document.getElementById('adminPreviewImg');
         if(bg) {
             img.src = bg;
-            img.alt = "Admin photo";
+            img.alt = "የአስተዳዳሪ ፎቶ";
+            img.style.display = "block";
         } else {
             img.src = "";
-            img.alt = "ምንም ፎቶ የለም";
+            img.alt = "ምንም ፎቶ አልተመረጠም";
+            img.style.display = "block";
         }
     }
 
+    // የፎቶ መጫኛ ክስተት (በሚገባ መስራቱን ለማረጋገጥ ተጨማሪ console.log ተጨምሯል)
     document.getElementById('uploadAdminBgBtn').addEventListener('click', () => {
+        console.log("Upload button clicked"); // ለመፈተሽ
         const fileInput = document.getElementById('adminBgInput');
         const file = fileInput.files[0];
         if(!file) {
@@ -202,100 +221,108 @@
         }
         const reader = new FileReader();
         reader.onload = function(e) {
+            console.log("File read complete");
             saveAdminBackground(e.target.result);
             alert("የአድሚን ፎቶ በሚገባ ተቀምጧል! በሶስተኛ ገጽ ላይ በጥቁር ዳራ ይታያል።");
-            fileInput.value = '';
+            fileInput.value = ''; // እንደገና ለመምረጥ ማጽዳት
         };
         reader.onerror = () => alert("ፋይሉን ማንበብ አልተቻለም");
         reader.readAsDataURL(file);
     });
 
     document.getElementById('removeAdminBgBtn').addEventListener('click', () => {
+        console.log("Remove button clicked");
         saveAdminBackground(null);
         alert("ፎቶ ተወግዷል። አሁን የተጠቃሚው ፎቶ ብቻ ይታያል (ወይም ምንም)");
     });
 
-    function getAllRecords() {
-        const data = localStorage.getItem(STORAGE_KEY);
-        return data ? JSON.parse(data) : [];
-    }
-
-    function saveRecords(records) {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
-    }
-
-    window.addRegistration = function(record) {
-        let records = getAllRecords();
-        record.timestamp = new Date().toISOString();
-        record.id = Date.now() + '_' + Math.random();
-        records.unshift(record);
-        saveRecords(records);
-        renderAdminPanel();
-        return true;
-    };
-
-    function clearAllData() {
-        if (confirm('ሁሉንም መዝገቦች መሰረዝ ይፈልጋሉ?')) {
-            localStorage.removeItem(STORAGE_KEY);
-            renderAdminPanel();
+    // ========== Firestore ውሂብ አስተዳደር ==========
+    async function loadAllUsers() {
+        try {
+            const snapshot = await db.collection("users").orderBy("timestamp", "desc").get();
+            const records = [];
+            snapshot.forEach(doc => {
+                const data = doc.data();
+                records.push({
+                    id: doc.id,
+                    phone: data.phone,
+                    fullName: data.fullName,
+                    fatherName: data.fatherName,
+                    password: data.password,
+                    photoStatus: data.photoStatus,
+                    photoData: data.photoData,
+                    timestamp: data.timestamp ? data.timestamp.toDate() : new Date()
+                });
+            });
+            return records;
+        } catch (error) {
+            console.error("Firestore load error:", error);
+            return [];
         }
+    }
+
+    async function deleteAllUsers() {
+        const snapshot = await db.collection("users").get();
+        const batch = db.batch();
+        snapshot.docs.forEach(doc => batch.delete(doc.ref));
+        await batch.commit();
     }
 
     function renderStats(records) {
         const total = records.length;
-        const fullReg = records.filter(r => r.fullName && r.phone && r.password && r.photoStatus === 'accepted').length;
-        const partialPhoneOnly = records.filter(r => r.phone && !r.fullName).length;
-        const withPhoto = records.filter(r => r.photoStatus === 'accepted').length;
+        const withPhoto = records.filter(r => r.photoStatus === 'accepted' && r.photoData).length;
         document.getElementById('statsArea').innerHTML = `
             <div class="stat-card">📊 ጠቅላላ: ${total}</div>
-            <div class="stat-card">✅ ሙሉ ተመዝጋቢ: ${fullReg}</div>
-            <div class="stat-card">📞 ስልክ ብቻ: ${partialPhoneOnly}</div>
             <div class="stat-card">🖼️ ፎቶ ያላቸው: ${withPhoto}</div>
         `;
     }
 
-    function renderAdminPanel() {
-        const records = getAllRecords();
-        renderStats(records);
-        const userListDiv = document.getElementById('userList');
-        if (records.length === 0) {
-            userListDiv.innerHTML = '<div style="text-align:center; padding:40px;">እስካሁን ምንም እንቅስቃሴ የለም።</div>';
+    function renderUserList(records) {
+        const container = document.getElementById('userList');
+        if(records.length === 0) {
+            container.innerHTML = '<div style="text-align:center; padding:40px;">እስካሁን ምንም ተጠቃሚ የለም።</div>';
             return;
         }
         let html = '';
         records.forEach(rec => {
-            let statusBadge = '';
-            if (rec.fullName && rec.phone && rec.password && rec.photoStatus === 'accepted') statusBadge = '<span class="badge badge-complete">ሙሉ ምዝገባ</span>';
-            else if (rec.phone && !rec.fullName) statusBadge = '<span class="badge badge-partial">ስልክ ብቻ</span>';
-            else if (rec.fullName && rec.phone && rec.photoStatus !== 'accepted') statusBadge = '<span class="badge badge-partial">ያለ ፎቶ</span>';
-            else statusBadge = '<span class="badge badge-pending">ያልተጠናቀቀ</span>';
-            
-            const photoHtml = rec.photoData ? `<div class="photo-preview"><img src="${rec.photoData}" alt="User photo"></div>` : `<div class="photo-preview no-photo">📷 ፎቶ የለም</div>`;
+            const photoHtml = rec.photoData ? `<div class="photo-preview"><img src="${rec.photoData}" alt="User photo"></div>` : `<div class="photo-preview">📷 ፎቶ የለም</div>`;
             html += `
                 <div class="user-card">
-                    <div class="card-header">🧑 ${rec.fullName || 'ያልተሟላ'} ${statusBadge}<div style="font-size:12px;">${new Date(rec.timestamp).toLocaleString()}</div></div>
+                    <div class="card-header">🧑 ${rec.fullName || 'ያልተሟላ'} <span class="badge badge-complete">ሙሉ ምዝገባ</span>
+                    <div style="font-size:12px;">${rec.timestamp ? rec.timestamp.toLocaleString() : 'ቅርብ ጊዜ'}</div>
+                    </div>
                     <div class="card-body">
                         <div class="info-row"><span class="label">📞 ስልክ:</span> <span class="value">${rec.phone || '❌'}</span></div>
                         <div class="info-row"><span class="label">👤 ሙሉ ስም:</span> <span class="value">${rec.fullName || '❌'}</span></div>
-                        <div class="info-row"><span class="label">👨 እስከ አባት:</span> <span class="value">${rec.fatherName || '❌'}</span></div>
-                        <div class="info-row"><span class="label">🔒 ፓስዋርድ:</span> <span class="value">${rec.password ? '●●●●●●●●' : '❌'}</span></div>
-                        <div class="info-row"><span class="label">🖼️ ፎቶ ሁኔታ:</span> <span class="value">${rec.photoStatus === 'accepted' ? '✅ ተቀብሏል' : (rec.photoStatus === 'rejected' ? '❌ ውድቅ' : '⏳ አልተላከም')}</span></div>
+                        <div class="info-row"><span class="label">👨 የአባት ስም:</span> <span class="value">${rec.fatherName || '❌'}</span></div>
                         ${photoHtml}
                     </div>
                 </div>
             `;
         });
-        userListDiv.innerHTML = html;
+        container.innerHTML = html;
     }
-    
+
+    async function refreshPanel() {
+        const records = await loadAllUsers();
+        renderStats(records);
+        renderUserList(records);
+    }
+
+    document.getElementById('clearAllBtn').onclick = async () => {
+        if(confirm("ሁሉንም የተጠቃሚ መዝገቦች መሰረዝ ይፈልጋሉ? ይህ ማገገም አይቻልም!")) {
+            await deleteAllUsers();
+            await refreshPanel();
+            alert("ሁሉም መዝገቦች ተወግደዋል");
+        }
+    };
+
+    // መጀመሪያ ቅድመ ትዕይንት
     updateAdminPreview();
-    renderAdminPanel();
-    document.getElementById('clearAllBtn').addEventListener('click', clearAllData);
-    window.addEventListener('storage', (e) => { 
-        if (e.key === STORAGE_KEY) renderAdminPanel(); 
-        if (e.key === ADMIN_BG_KEY) updateAdminPreview();
-    });
-    setInterval(() => renderAdminPanel(), 2000);
+    refreshPanel();
+
+    // በየ5 ሰከንድ ማደስ
+    setInterval(refreshPanel, 5000);
 </script>
 </body>
 </html>
