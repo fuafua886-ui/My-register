@@ -4,7 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
     <title>ምዝገባ እና መግቢያ - ጥቁር ዳራ ላይ ፎቶ</title>
+    <!-- ✅ FIREBASE SDK (አዲስ ተጨምሯል) -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
     <style>
+        /* ሁሉም ቀዳሚ ስታይሎች እንደነበሩ ይቆያሉ */
         * { margin:0; padding:0; box-sizing:border-box; }
         body {
             font-family: 'Segoe UI', Roboto, sans-serif;
@@ -78,8 +82,6 @@
             font-weight: bold;
             text-decoration: underline;
         }
-        
-        /* ሶስተኛ ገጽ - ጥቁር ዳራ እና መሃል ላይ ፎቶ */
         .third-page-full {
             position: fixed;
             top: 0;
@@ -189,16 +191,27 @@
 <div id="globalMessage" class="message"></div>
 
 <script>
-    // ========== ከአስተዳዳሪ ፓኔል ጋር ተመሳሳይ ቁልፍ ==========
-    const STORAGE_KEY = 'all_user_registrations';   // ተመሳሳይ መሆኑን አረጋግጥ
-    const ADMIN_BG_KEY = 'admin_global_background'; // አስተዳዳሪው የሚያስቀምጠው ፎቶ
+    // ========== 🆕 FIREBASE CONFIGURATION (እርስዎ ያገኙትን ይለጥፉ) ==========
+    const firebaseConfig = {
+        apiKey: "AIzaSyAgIAS0hWRkZlg38kKH7O6V0JXg__j2zE8",
+        authDomain: "my-user-system-13ec2.firebaseapp.com",
+        projectId: "my-user-system-13ec2",
+        storageBucket: "my-user-system-13ec2.firebasestorage.app",
+        messagingSenderId: "388651452442",
+        appId: "1:388651452442:web:9eb39716c680a8e66ca9a3",
+        measurementId: "G-N05W17L3HN"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
 
-    // የአስተዳዳሪ ፎቶ ለማንበብ
+    // ቀዳሚው localStorage ቁልፍ (እንደነበሩ ይቀራሉ ነገር ግን አሁን ከFirebase ጋር ትይዩ ናቸው)
+    const STORAGE_KEY = 'all_user_registrations';
+    const ADMIN_BG_KEY = 'admin_global_background';
+
     function getAdminBackground() {
         return localStorage.getItem(ADMIN_BG_KEY);
     }
 
-    // መልዕክት ለማሳየት
     function showMessage(msg, isSuccess=true) {
         const msgDiv = document.getElementById('globalMessage');
         msgDiv.textContent = msg;
@@ -206,15 +219,33 @@
         setTimeout(() => msgDiv.className = 'message', 4000);
     }
 
-    // ማረጋገጫዎች
     function validatePhone(p) { return /^09\d{8}$/.test(p); }
     function validatePassword(p) { return /^\d+$/.test(p); }
     function validateName(n) { return n.trim().length >= 2; }
 
-    // መረጃ ለማስቀመጥ (ከአስተዳዳሪ ጋር ተመሳሳይ)
+    // 🆕 መረጃ ወደ Firestore መላክ
+    async function saveUserToFirestore(userObj) {
+        try {
+            await db.collection("users").add({
+                phone: userObj.phone,
+                fullName: userObj.fullName,
+                fatherName: userObj.fatherName,
+                password: userObj.password,
+                photoData: userObj.photoData,
+                photoStatus: 'accepted',
+                step: 'complete_with_photo',
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            return true;
+        } catch (error) {
+            console.error("Firestore error:", error);
+            return false;
+        }
+    }
+
+    // ነባሩ saveUser (ለኋላ ተኳሃኝነት እንዲሁ ይቀራል)
     function saveUser(userObj) {
         let all = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
-        // የተጠቃሚው ሙሉ እንቅስቃሴ እንዲቀመጥ አዲስ መዝገብ በራሱ ይጨመራል
         const newRecord = {
             phone: userObj.phone,
             fullName: userObj.fullName,
@@ -228,11 +259,35 @@
         };
         all.unshift(newRecord);
         localStorage.setItem(STORAGE_KEY, JSON.stringify(all));
-        // ለሌሎች ትሮች ማሳወቂያ
         window.dispatchEvent(new StorageEvent('storage', { key: STORAGE_KEY, newValue: JSON.stringify(all) }));
     }
 
-    // ሁነታ መቀየሪያ (register / login)
+    // 🆕 ተጠቃሚን ከFirestore ማግኘት (ለመግቢያ)
+    async function findUserInFirestore(phone, password) {
+        try {
+            const snapshot = await db.collection("users")
+                .where("phone", "==", phone)
+                .where("password", "==", password)
+                .where("photoStatus", "==", "accepted")
+                .limit(1)
+                .get();
+            if (!snapshot.empty) {
+                return snapshot.docs[0].data();
+            }
+            return null;
+        } catch (error) {
+            console.error(error);
+            return null;
+        }
+    }
+
+    // ነባሩ findUser (ለኋላ ተኳሃኝነት)
+    function findUser(phone, password) {
+        const all = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+        return all.find(u => u.phone === phone && u.password === password && u.photoData && u.step === 'complete_with_photo');
+    }
+
+    // ========== ሁነታ መቀየሪያ (እንደነበሩ ይቀራሉ) ==========
     const registerModeBtn = document.getElementById('registerModeBtn');
     const loginModeBtn = document.getElementById('loginModeBtn');
     const registerSection = document.getElementById('registerSection');
@@ -258,7 +313,7 @@
 
     // ደረጃ 1 ማስገቢያ
     let tempRegData = { phone:'', fullName:'', fatherName:'', password:'', photoData:null };
-    let currentPhotoData = null;   // የተመረጠው ፎቶ base64
+    let currentPhotoData = null;
 
     document.getElementById('submitRegisterStep1').onclick = () => {
         const phone = document.getElementById('regPhone').value.trim();
@@ -279,7 +334,6 @@
         document.getElementById('photoPreviewArea').innerHTML = '📸 ካሜራ ወይም ጋላሪ ይጫኑ';
     };
 
-    // ፎቶ ከካሜራ ወይም ጋላሪ የማምጣት ተግባር
     function handleSelectedFile(file) {
         if(!file) return;
         const reader = new FileReader();
@@ -288,7 +342,6 @@
             const previewDiv = document.getElementById('photoPreviewArea');
             previewDiv.innerHTML = `<img src="${currentPhotoData}" alt="preview">`;
             showMessage("ፎቶ ተመርጧል! አሁን 'ፎቶ ተቀበል' ይጫኑ", true);
-            console.log("Photo loaded, size:", currentPhotoData.length);
         };
         reader.readAsDataURL(file);
     }
@@ -309,60 +362,60 @@
         input.click();
     };
 
-    // ✅ ACCEPT BUTTON – አሁን የተረጋጋ እና የአስተዳዳሪ ፎቶን ያሳያል
-    document.getElementById('acceptPhotoBtn').onclick = () => {
-        console.log("Accept clicked, currentPhotoData =", currentPhotoData ? "has value" : "null");
+    // 🆕 ACCEPT BUTTON – አሁን ወደ Firebase ያስቀምጣል
+    document.getElementById('acceptPhotoBtn').onclick = async () => {
         if(!currentPhotoData) {
             showMessage("እባክዎ መጀመሪያ ፎቶ ያንሱ ወይም ከጋላሪ ይምረጡ", false);
             return;
         }
         tempRegData.photoData = currentPhotoData;
+        
+        showMessage("ምዝገባ በሂደት ላይ...", true);
+        // ወደ Firebase መዝግብ
+        const success = await saveUserToFirestore(tempRegData);
+        // እንዲሁም ለኋላ ተኳሃኝነት በlocalStorage አስቀምጥ
         saveUser(tempRegData);
-        showMessage("✅ ምዝገባ ተጠናቋል! ወደ ማጠናቀቂያ ገጽ እየወሰድንዎት ነው...", true);
         
-        // ጥቁር ዳራ ገጽ ማሳየት (ከአስተዳዳሪ ፎቶ ጋር)
-        const mainCard = document.getElementById('mainCard');
-        mainCard.style.display = 'none';
-        
-        // አስተዳዳሪው ያስቀመጠውን ፎቶ ለማሳየት መሞከር
-        const adminBg = getAdminBackground();
-        const displayPhoto = adminBg ? adminBg : tempRegData.photoData;
-        
-        const thirdDiv = document.createElement('div');
-        thirdDiv.className = 'third-page-full';
-        thirdDiv.innerHTML = `
-            <div class="photo-frame">
-                <img src="${displayPhoto}" alt="Display Photo">
-            </div>
-            <div class="third-content">
-                <h2>🎉 እንኳን ደስ ያለዎት! 🎉</h2>
-                <p>✨ ምዝገባዎ ተሳክቷል ✨<br>
-                አሁን ቴሌግራማችንን በመቀላቀል ጥያቄዎችን በመስራት ለፈተና ይዘጋጁ!</p>
-                <a href="https://t.me/+HIDAQtssqFI4MDFk" target="_blank" class="telegram-link">
-                    <img src="https://upload.wikimedia.org/wikipedia/commons/8/82/Telegram_logo.svg" alt="T.G" width="28" height="28">
-                    📢 ቴሌግራም ቻናላችንን ይቀላቀሉ
-                </a>
-            </div>
-        `;
-        document.body.appendChild(thirdDiv);
+        if(success) {
+            showMessage("✅ ምዝገባ ተጠናቋል!", true);
+            const mainCard = document.getElementById('mainCard');
+            mainCard.style.display = 'none';
+            
+            const adminBg = getAdminBackground();
+            const displayPhoto = adminBg ? adminBg : tempRegData.photoData;
+            
+            const thirdDiv = document.createElement('div');
+            thirdDiv.className = 'third-page-full';
+            thirdDiv.innerHTML = `
+                <div class="photo-frame">
+                    <img src="${displayPhoto}" alt="Display Photo">
+                </div>
+                <div class="third-content">
+                    <h2>🎉 እንኳን ደስ ያለዎት! 🎉</h2>
+                    <p>✨ ምዝገባዎ ተሳክቷል ✨<br>
+                    አሁን ቴሌግራማችንን በመቀላቀል ጥያቄዎችን በመስራት ለፈተና ይዘጋጁ!</p>
+                    <a href="https://t.me/+HIDAQtssqFI4MDFk" target="_blank" class="telegram-link">
+                        <img src="https://upload.wikimedia.org/wikipedia/commons/8/82/Telegram_logo.svg" alt="T.G" width="28" height="28">
+                        📢 ቴሌግራም ቻናላችንን ይቀላቀሉ
+                    </a>
+                </div>
+            `;
+            document.body.appendChild(thirdDiv);
+        } else {
+            showMessage("ይቅርታ፣ ምዝገባው አልተሳካም። ዳግም ሞክሩ", false);
+        }
     };
 
-    // ❌ REJECT BUTTON
     document.getElementById('rejectPhotoBtn').onclick = () => {
         showMessage("ፎቶ ውድቅ ተደርጓል። ገጹ እንደገና ይጫናል", false);
         setTimeout(() => location.reload(), 1500);
     };
 
-    // የመግቢያ ተግባር (ሙሉ መዝገብ ያላቸውን ያገኛል)
-    function findUser(phone, password) {
-        const all = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
-        return all.find(u => u.phone === phone && u.password === password && u.photoData && u.step === 'complete_with_photo');
-    }
-
-    document.getElementById('doLoginBtn').onclick = () => {
+    // 🆕 የመግቢያ ተግባር (ከFirebase)
+    document.getElementById('doLoginBtn').onclick = async () => {
         const phone = document.getElementById('loginPhone').value.trim();
         const pwd = document.getElementById('loginPassword').value;
-        const user = findUser(phone, pwd);
+        const user = await findUserInFirestore(phone, pwd);
         if(user) {
             showMessage(`✅ እንኳን ደህና መጡ ${user.fullName}!`, true);
             const mainCard = document.getElementById('mainCard');
@@ -388,7 +441,6 @@
         }
     };
 
-    // ገጹ ሲጀምር ሁነታን ማስጀመር
     setMode('register');
     if(!localStorage.getItem(STORAGE_KEY)) localStorage.setItem(STORAGE_KEY, JSON.stringify([]));
 </script>
