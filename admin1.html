@@ -3,8 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>የአድሚን ፓናል - Firebase ስሪት</title>
-    <!-- Firebase SDK -->
+    <title>የአድሚን ፓናል - አጠቃላይ ቁጥጥር</title>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
     <style>
@@ -54,11 +53,7 @@
             align-items: center;
             justify-content: center;
         }
-        .admin-photo-preview img {
-            width: 100%;
-            height: auto;
-            display: block;
-        }
+        .admin-photo-preview img { width: 100%; height: auto; display: block; }
         .admin-photo-upload {
             display: flex;
             gap: 15px;
@@ -78,12 +73,10 @@
             background: #27ae60;
             color: white;
         }
-        .remove-bg-btn {
-            background: #e67e22 !important;
-        }
+        .remove-bg-btn { background: #e67e22 !important; }
         .user-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
             gap: 25px;
         }
         .user-card {
@@ -97,7 +90,21 @@
             color: white;
             padding: 15px;
             font-weight: bold;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
         }
+        .card-actions button {
+            margin-left: 8px;
+            padding: 6px 12px;
+            border-radius: 30px;
+            border: none;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .block-btn { background: #e67e22; color: white; }
+        .delete-btn { background: #c0392b; color: white; }
         .card-body { padding: 15px; }
         .info-row {
             margin-bottom: 10px;
@@ -108,11 +115,25 @@
         .value { color: #555; }
         .photo-preview { margin-top: 10px; text-align: center; }
         .photo-preview img { max-width: 100%; max-height: 200px; border-radius: 8px; }
-        .badge {
-            display: inline-block; padding: 4px 10px; border-radius: 20px;
-            font-size: 12px; font-weight: bold; margin-left: 10px;
+        .badge-complete { background: #27ae60; color: white; padding: 4px 10px; border-radius: 20px; font-size: 12px; margin-left: 10px; }
+        .badge-blocked { background: #e67e22; color: white; padding: 4px 10px; border-radius: 20px; font-size: 12px; margin-left: 10px; }
+        .global-block-bar {
+            background: white;
+            border-radius: 20px;
+            padding: 15px;
+            margin-bottom: 20px;
+            text-align: center;
         }
-        .badge-complete { background: #27ae60; color: white; }
+        .global-block-bar button {
+            padding: 10px 25px;
+            margin: 0 10px;
+            border: none;
+            border-radius: 40px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .block-site-btn { background: #c0392b; color: white; }
+        .unblock-site-btn { background: #27ae60; color: white; }
         .clear-btn {
             display: block; margin: 30px auto 0; background: #c0392b;
             color: white; border: none; padding: 12px 24px;
@@ -130,9 +151,14 @@
 </head>
 <body>
 <div class="container">
-    <h1>📋 የአድሚን ፓናል (Firebase)</h1>
+    <h1>📋 የአድሚን ፓናል (አጠቃላይ ቁጥጥር)</h1>
 
-    <!-- አድሚን ለሶስተኛ ገጽ ፎቶ ማስገቢያ -->
+    <div class="global-block-bar">
+        <button id="globalBlockBtn" class="block-site-btn">🔒 ሊንኩን አግድ</button>
+        <button id="globalUnblockBtn" class="unblock-site-btn">🔓 ማገድን አንሳ</button>
+        <span id="blockStatus" style="margin-left: 15px;"></span>
+    </div>
+
     <div class="admin-photo-box">
         <h3>🖼️ ለሶስተኛ ገጽ ፎቶ ይምረጡ</h3>
         <div class="admin-photo-preview" id="adminPhotoPreview">
@@ -149,11 +175,10 @@
     <div class="stats" id="statsArea"></div>
     <div id="userList" class="user-grid"></div>
     <button class="clear-btn" id="clearAllBtn">🗑 ሁሉንም መዝገቦች አጥፋ (Firestore)</button>
-    <footer>በአድሚን ፓናል - ሁሉም ተመዝጋቢዎች እዚህ ይታያሉ</footer>
+    <footer>በአድሚን ፓናል - ተጠቃሚዎችን መግደት እና መሰረዝ ይቻላል</footer>
 </div>
 
 <script>
-    // ========== FIREBASE CONFIGURATION ==========
     const firebaseConfig = {
         apiKey: "AIzaSyAgIAS0hWRkZlg38kKH7O6V0JXg__j2zE8",
         authDomain: "my-user-system-13ec2.firebaseapp.com",
@@ -168,112 +193,102 @@
 
     const ADMIN_BG_KEY = 'admin_global_background';
 
-    // የአስተዳዳሪ ፎቶ ማስቀመጫ ተግባራት
     function saveAdminBackground(base64) {
         if(base64 && base64.startsWith('data:image')) {
             localStorage.setItem(ADMIN_BG_KEY, base64);
             const statusDiv = document.getElementById('uploadStatus');
-            statusDiv.innerHTML = '✅ ፎቶ በተሳካ ሁኔታ ተቀመጠ!';
+            statusDiv.innerHTML = '✅ ፎቶ ተቀመጠ!';
             statusDiv.style.backgroundColor = '#d4edda';
-            statusDiv.style.color = '#155724';
-            setTimeout(() => { statusDiv.innerHTML = ''; statusDiv.style.backgroundColor = ''; }, 3000);
+            setTimeout(() => { statusDiv.innerHTML = ''; }, 3000);
         } else {
             localStorage.removeItem(ADMIN_BG_KEY);
             const statusDiv = document.getElementById('uploadStatus');
             statusDiv.innerHTML = '🗑 ፎቶ ተወግዷል';
             statusDiv.style.backgroundColor = '#f8d7da';
-            statusDiv.style.color = '#721c24';
-            setTimeout(() => { statusDiv.innerHTML = ''; statusDiv.style.backgroundColor = ''; }, 3000);
+            setTimeout(() => { statusDiv.innerHTML = ''; }, 3000);
         }
         updateAdminPreview();
     }
 
-    function getAdminBackground() {
-        return localStorage.getItem(ADMIN_BG_KEY);
-    }
-
+    function getAdminBackground() { return localStorage.getItem(ADMIN_BG_KEY); }
     function updateAdminPreview() {
         const bg = getAdminBackground();
         const img = document.getElementById('adminPreviewImg');
-        if(bg) {
-            img.src = bg;
-            img.alt = "የአስተዳዳሪ ፎቶ";
-            img.style.display = "block";
-        } else {
-            img.src = "";
-            img.alt = "ምንም ፎቶ አልተመረጠም";
-            img.style.display = "block";
-        }
+        img.src = bg || "";
+        img.alt = bg ? "የአስተዳዳሪ ፎቶ" : "ምንም ፎቶ አልተመረጠም";
     }
 
-    // የፎቶ መጫኛ ክስተት (በሚገባ መስራቱን ለማረጋገጥ ተጨማሪ console.log ተጨምሯል)
-    document.getElementById('uploadAdminBgBtn').addEventListener('click', () => {
-        console.log("Upload button clicked"); // ለመፈተሽ
-        const fileInput = document.getElementById('adminBgInput');
-        const file = fileInput.files[0];
-        if(!file) {
-            alert("እባክዎ መጀመሪያ ፋይል ይምረጡ");
-            return;
-        }
-        if(!file.type.startsWith('image/')) {
-            alert("እባክዎ የሚሰራ የምስል ፋይል ይምረጡ");
-            return;
-        }
+    document.getElementById('uploadAdminBgBtn').onclick = () => {
+        const file = document.getElementById('adminBgInput').files[0];
+        if(!file) return alert("ፋይል ይምረጡ");
         const reader = new FileReader();
-        reader.onload = function(e) {
-            console.log("File read complete");
-            saveAdminBackground(e.target.result);
-            alert("የአድሚን ፎቶ በሚገባ ተቀምጧል! በሶስተኛ ገጽ ላይ በጥቁር ዳራ ይታያል።");
-            fileInput.value = ''; // እንደገና ለመምረጥ ማጽዳት
-        };
-        reader.onerror = () => alert("ፋይሉን ማንበብ አልተቻለም");
+        reader.onload = e => saveAdminBackground(e.target.result);
         reader.readAsDataURL(file);
-    });
+    };
+    document.getElementById('removeAdminBgBtn').onclick = () => saveAdminBackground(null);
+    updateAdminPreview();
 
-    document.getElementById('removeAdminBgBtn').addEventListener('click', () => {
-        console.log("Remove button clicked");
-        saveAdminBackground(null);
-        alert("ፎቶ ተወግዷል። አሁን የተጠቃሚው ፎቶ ብቻ ይታያል (ወይም ምንም)");
-    });
+    // ========== አጠቃላይ ማገድ ==========
+    async function setGlobalBlock(blocked) {
+        await db.collection("system").doc("globalBlock").set({ blocked: blocked });
+        updateBlockStatus();
+    }
+    async function isAppBlocked() {
+        const doc = await db.collection("system").doc("globalBlock").get();
+        return doc.exists && doc.data().blocked === true;
+    }
+    async function updateBlockStatus() {
+        const blocked = await isAppBlocked();
+        document.getElementById('blockStatus').innerHTML = blocked ? "⛔ ሊንኩ ተግዷል" : "✅ ሊንኩ ንቁ ነው";
+    }
+    document.getElementById('globalBlockBtn').onclick = async () => {
+        await setGlobalBlock(true);
+        alert("ሊንኩ ተግዷል! ተጠቃሚዎች 'አገልግሎቱ ተቋርጧል' የሚል መልዕክት ያያሉ።");
+    };
+    document.getElementById('globalUnblockBtn').onclick = async () => {
+        await setGlobalBlock(false);
+        alert("ማገድ ተነስቷል! ሊንኩ ተመልሶ ይሰራል።");
+    };
 
-    // ========== Firestore ውሂብ አስተዳደር ==========
+    // ========== ተጠቃሚዎችን ማስተዳደር ==========
     async function loadAllUsers() {
-        try {
-            const snapshot = await db.collection("users").orderBy("timestamp", "desc").get();
-            const records = [];
-            snapshot.forEach(doc => {
-                const data = doc.data();
-                records.push({
-                    id: doc.id,
-                    phone: data.phone,
-                    fullName: data.fullName,
-                    fatherName: data.fatherName,
-                    password: data.password,
-                    photoStatus: data.photoStatus,
-                    photoData: data.photoData,
-                    timestamp: data.timestamp ? data.timestamp.toDate() : new Date()
-                });
-            });
-            return records;
-        } catch (error) {
-            console.error("Firestore load error:", error);
-            return [];
-        }
+        const snapshot = await db.collection("users").orderBy("timestamp", "desc").get();
+        const records = [];
+        snapshot.forEach(doc => {
+            const data = doc.data();
+            records.push({ id: doc.id, ...data, timestamp: data.timestamp?.toDate() || new Date() });
+        });
+        return records;
     }
 
+    async function toggleBlockUser(userId, currentBlocked) {
+        await db.collection("users").doc(userId).update({ blocked: !currentBlocked });
+        refreshPanel();
+    }
+    async function deleteUser(userId) {
+        if(confirm("ይህን ተጠቃሚ ሙሉ በሙሉ መሰረዝ ይፈልጋሉ?")) {
+            await db.collection("users").doc(userId).delete();
+            refreshPanel();
+        }
+    }
     async function deleteAllUsers() {
-        const snapshot = await db.collection("users").get();
-        const batch = db.batch();
-        snapshot.docs.forEach(doc => batch.delete(doc.ref));
-        await batch.commit();
+        if(confirm("ሁሉንም ተጠቃሚዎች መሰረዝ ይፈልጋሉ?")) {
+            const snapshot = await db.collection("users").get();
+            const batch = db.batch();
+            snapshot.docs.forEach(doc => batch.delete(doc.ref));
+            await batch.commit();
+            refreshPanel();
+        }
     }
 
     function renderStats(records) {
         const total = records.length;
         const withPhoto = records.filter(r => r.photoStatus === 'accepted' && r.photoData).length;
+        const blocked = records.filter(r => r.blocked === true).length;
         document.getElementById('statsArea').innerHTML = `
             <div class="stat-card">📊 ጠቅላላ: ${total}</div>
             <div class="stat-card">🖼️ ፎቶ ያላቸው: ${withPhoto}</div>
+            <div class="stat-card">⛔ የተገዱ: ${blocked}</div>
         `;
     }
 
@@ -285,22 +300,30 @@
         }
         let html = '';
         records.forEach(rec => {
-            const photoHtml = rec.photoData ? `<div class="photo-preview"><img src="${rec.photoData}" alt="User photo"></div>` : `<div class="photo-preview">📷 ፎቶ የለም</div>`;
+            const photoHtml = rec.photoData ? `<div class="photo-preview"><img src="${rec.photoData}" alt="photo"></div>` : `<div class="photo-preview">📷 ፎቶ የለም</div>`;
+            const blockBadge = rec.blocked ? '<span class="badge-blocked">⛔ ተግዷል</span>' : '<span class="badge-complete">✅ ንቁ</span>';
             html += `
                 <div class="user-card">
-                    <div class="card-header">🧑 ${rec.fullName || 'ያልተሟላ'} <span class="badge badge-complete">ሙሉ ምዝገባ</span>
-                    <div style="font-size:12px;">${rec.timestamp ? rec.timestamp.toLocaleString() : 'ቅርብ ጊዜ'}</div>
+                    <div class="card-header">
+                        <span>🧑 ${rec.fullName || 'ያልተሟላ'} ${blockBadge}</span>
+                        <div class="card-actions">
+                            <button class="block-btn" onclick="window.toggleBlock('${rec.id}', ${rec.blocked === true})">${rec.blocked ? '🔓 አንሳ' : '⛔ አግድ'}</button>
+                            <button class="delete-btn" onclick="window.deleteUser('${rec.id}')">🗑 ሰርዝ</button>
+                        </div>
                     </div>
                     <div class="card-body">
                         <div class="info-row"><span class="label">📞 ስልክ:</span> <span class="value">${rec.phone || '❌'}</span></div>
                         <div class="info-row"><span class="label">👤 ሙሉ ስም:</span> <span class="value">${rec.fullName || '❌'}</span></div>
                         <div class="info-row"><span class="label">👨 የአባት ስም:</span> <span class="value">${rec.fatherName || '❌'}</span></div>
+                        <div class="info-row"><span class="label">🔒 ፓስወርድ:</span> <span class="value">●●●●●●●●</span></div>
                         ${photoHtml}
                     </div>
                 </div>
             `;
         });
         container.innerHTML = html;
+        window.toggleBlock = async (id, current) => { await toggleBlockUser(id, current); };
+        window.deleteUser = async (id) => { await deleteUser(id); };
     }
 
     async function refreshPanel() {
@@ -309,19 +332,9 @@
         renderUserList(records);
     }
 
-    document.getElementById('clearAllBtn').onclick = async () => {
-        if(confirm("ሁሉንም የተጠቃሚ መዝገቦች መሰረዝ ይፈልጋሉ? ይህ ማገገም አይቻልም!")) {
-            await deleteAllUsers();
-            await refreshPanel();
-            alert("ሁሉም መዝገቦች ተወግደዋል");
-        }
-    };
-
-    // መጀመሪያ ቅድመ ትዕይንት
-    updateAdminPreview();
+    document.getElementById('clearAllBtn').onclick = deleteAllUsers;
+    updateBlockStatus();
     refreshPanel();
-
-    // በየ5 ሰከንድ ማደስ
     setInterval(refreshPanel, 5000);
 </script>
 </body>
