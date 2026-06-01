@@ -231,25 +231,21 @@
     function validatePassword(p) { return /^\d+$/.test(p); }
     function validateName(n) { return n.trim().length >= 2; }
 
-    // ሊንኩ ተግዶ መሆኑን ማረጋገጫ
     async function isAppBlocked() {
         const blockDoc = await db.collection("system").doc("globalBlock").get();
         return blockDoc.exists && blockDoc.data().blocked === true;
     }
 
-    // ስልክ ተመዝግቧል? (ለመመዝገብ)
     async function isPhoneRegistered(phone) {
         const snapshot = await db.collection("users").where("phone", "==", phone).limit(1).get();
         return !snapshot.empty;
     }
 
-    // ስም ተመዝግቧል? (ለመመዝገብ)
     async function isFullNameRegistered(fullName) {
         const snapshot = await db.collection("users").where("fullName", "==", fullName).limit(1).get();
         return !snapshot.empty;
     }
 
-    // የመጀመሪያ ደረጃ መረጃ ማስቀመጫ (pending)
     let pendingDocId = null;
     async function saveInitialUserData(userObj) {
         try {
@@ -271,7 +267,6 @@
         }
     }
 
-    // ፎቶ ሲጨመር መረጃ ማዘመን
     async function updateUserWithPhoto(docId, photoData) {
         try {
             await db.collection("users").doc(docId).update({
@@ -286,7 +281,6 @@
         }
     }
 
-    // ለመግቢያ: ተጠቃሚ ፈልግ (እንዲሁም ታግዶ እንደሆነ ለይቶ ለማወቅ)
     async function findUserForLogin(phone, password) {
         try {
             const snapshot = await db.collection("users")
@@ -309,7 +303,6 @@
         }
     }
 
-    // ሁነታ መቀየሪያ
     const registerModeBtn = document.getElementById('registerModeBtn');
     const loginModeBtn = document.getElementById('loginModeBtn');
     const registerSection = document.getElementById('registerSection');
@@ -336,7 +329,6 @@
     let tempRegData = { phone:'', fullName:'', fatherName:'', password:'', photoData:null };
     let currentPhotoData = null;
 
-    // ደረጃ 1: መረጃ አስገብቶ ወደ Firebase ላክ
     document.getElementById('submitRegisterStep1').onclick = async () => {
         const phone = document.getElementById('regPhone').value.trim();
         const fullName = document.getElementById('regFullname').value.trim();
@@ -348,7 +340,6 @@
         if(!validateName(fatherName)) return showMessage("የአባት ስም ያስገቡ", false);
         if(!validatePassword(password)) return showMessage("ፓስወርድ ቁጥር ብቻ ይሁን", false);
 
-        // ስልክ ወይም ስም ቀድሞ መዝግቧል?
         const phoneExists = await isPhoneRegistered(phone);
         if(phoneExists) return showMessage("ይህ ስልክ ቀድሞ ተመዝግቧል! በመግቢያ ገጽ ይሞክሩ", false);
         
@@ -357,7 +348,6 @@
 
         tempRegData = { phone, fullName, fatherName, password, photoData: null };
         
-        // ወዲያውኑ ወደ Firestore ላክ (pending ሆኖ)
         showMessage("መረጃዎ በማስቀመጥ ላይ...", true);
         const docId = await saveInitialUserData(tempRegData);
         if(docId) {
@@ -400,7 +390,6 @@
         input.click();
     };
 
-    // ፎቶ ተቀበል - ነባሩን ሰነድ አዘምን
     document.getElementById('acceptPhotoBtn').onclick = async () => {
         if(!currentPhotoData) {
             showMessage("እባክዎ መጀመሪያ ፎቶ ያንሱ ወይም ከጋላሪ ይምረጡ", false);
@@ -444,7 +433,6 @@
         setTimeout(() => location.reload(), 1500);
     };
 
-    // የመግቢያ ተግባር - ግልጽ መልእክት ይሰጣል
     document.getElementById('doLoginBtn').onclick = async () => {
         const phone = document.getElementById('loginPhone').value.trim();
         const pwd = document.getElementById('loginPassword').value;
@@ -462,7 +450,6 @@
             showMessage("ምዝገባዎ አልተጠናቀቀም። እባክዎ ፎቶ ይምረጡ", false);
             return;
         }
-        // ስኬት
         showMessage(`✅ እንኳን ደህና መጡ ${result.fullName}!`, true);
         const mainCard = document.getElementById('mainCard');
         mainCard.style.display = 'none';
@@ -482,7 +469,6 @@
         document.body.appendChild(thirdDiv);
     };
 
-    // አጠቃላይ ሊንክ መገደድ ካለ ማሳያ
     async function checkGlobalBlock() {
         const blocked = await isAppBlocked();
         if(blocked) {
