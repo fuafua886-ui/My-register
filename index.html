@@ -55,20 +55,54 @@
         }
         button {
             background: #1a3e60; color: white; border: none; font-weight: bold;
-            cursor: pointer; transition: 0.2s;
+            cursor: pointer;
+            transition: 0.2s;
         }
         button:hover { background: #0e2a42; transform: scale(0.98); }
-        .photo-actions { display: flex; gap: 12px; margin: 10px 0; }
-        .photo-actions button { flex:1; background: #2c3e50; }
-        .photo-preview { text-align: center; margin: 15px 0; min-height: 160px; background: #f5f5f5; border-radius: 20px; display: flex; align-items: center; justify-content: center; }
-        .photo-preview img { max-width:100%; max-height:220px; border-radius:28px; border:2px solid #ccc; }
+        .photo-actions {
+            display: flex;
+            gap: 12px;
+            margin: 10px 0;
+        }
+        .photo-actions button {
+            flex: 1;
+            background: #2c3e50;
+        }
+        .photo-preview {
+            text-align: center;
+            margin: 15px 0;
+            min-height: 160px;
+            background: #f5f5f5;
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .photo-preview img {
+            max-width: 100%;
+            max-height: 220px;
+            border-radius: 28px;
+            border: 2px solid #ccc;
+        }
         .message {
-            position: fixed; bottom: 20px; left: 20px; right: 20px; z-index: 100;
-            text-align: center; font-weight: bold; padding: 10px; border-radius: 50px;
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            right: 20px;
+            z-index: 100;
+            text-align: center;
+            font-weight: bold;
+            padding: 10px;
+            border-radius: 50px;
         }
         .success { background: #d4edda; color: #155724; }
         .error { background: #f8d7da; color: #721c24; }
-        .info-text { font-size: 13px; color: #6c757d; text-align: center; margin-top: 10px; }
+        .info-text {
+            font-size: 13px;
+            color: #6c757d;
+            text-align: center;
+            margin-top: 10px;
+        }
         .switch-text {
             text-align: center;
             margin-top: 15px;
@@ -153,10 +187,19 @@
             line-height: 1.4;
         }
         .telegram-link {
-            display: inline-flex; align-items: center; gap: 12px;
-            background: #0088cc; padding: 12px 28px; border-radius: 50px;
-            text-decoration: none; color: white; font-weight: bold; font-size: 1.1rem;
-            margin-top: 15px; transition: 0.2s; border: 2px solid white;
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            background: #0088cc;
+            padding: 12px 28px;
+            border-radius: 50px;
+            text-decoration: none;
+            color: white;
+            font-weight: bold;
+            font-size: 1.1rem;
+            margin-top: 15px;
+            transition: 0.2s;
+            border: 2px solid white;
         }
         .telegram-link:hover { background: #006699; transform: scale(1.02); }
         .telegram-link img { width: 28px; filter: drop-shadow(0 2px 2px rgba(0,0,0,0.2)); }
@@ -174,8 +217,8 @@
         <div id="step1" class="step active">
             <h1>📋 መረጃ በትክክል ይሙሉ</h1>  
             <input type="tel" id="regPhone" placeholder="📞 09XXXXXXXX" autocomplete="off">
-            <input type="text" id="regFullname" placeholder="👤 first name">
-            <input type="text" id="regFathername" placeholder="👨 last name">
+            <input type="text" id="regFullname" placeholder="👤 ሙሉ ስም">
+            <input type="text" id="regFathername" placeholder="👨 የአባት ስም">
             <input type="password" id="regPassword" placeholder="🔒 ፓስወርድ (ቁጥር ብቻ)">
             <button id="submitRegisterStep1">✅ ቀጥል</button>
             <div class="info-text"></div>
@@ -189,7 +232,7 @@
                 <button id="galleryBtn">🖼️ ከጋላሪ</button>
             </div>
             <button id="acceptPhotoBtn" style="background:#27ae60;">✅ ፎቶ ተቀበል</button>
-            <button id="rejectPhotoBtn" style="background:#c0392b;">❌ ፎቶ ውድቅ አድርግ</button>
+            <!-- ❌ ፎቶ ውድቅ አድርግ አዝራር ተወግዷል -->
             <div class="info-text">ፎቶ ከመረጡ በኋላ "ፎቶ ተቀበል" ይጫኑ።</div>
         </div>
     </div>
@@ -221,19 +264,41 @@
     const STORAGE_KEY = 'all_user_registrations';
 
     function getAdminBackground() { return localStorage.getItem(ADMIN_BG_KEY); }
-    function showMessage(msg, isSuccess=true) {
+    
+    function showMessage(msg, isSuccess = true) {
         const msgDiv = document.getElementById('globalMessage');
         msgDiv.textContent = msg;
         msgDiv.className = 'message ' + (isSuccess ? 'success' : 'error');
         setTimeout(() => msgDiv.className = 'message', 4000);
     }
+    
     function validatePhone(p) { return /^09\d{8}$/.test(p); }
     function validatePassword(p) { return /^\d+$/.test(p); }
     function validateName(n) { return n.trim().length >= 2; }
 
+    // ጊዜ መጠበቂያ (Timeout) ተግባር
+    async function saveWithTimeout(promise, timeoutMs = 30000) {
+        let timeoutId;
+        const timeoutPromise = new Promise((_, reject) => {
+            timeoutId = setTimeout(() => {
+                reject(new Error("timeout"));
+            }, timeoutMs);
+        });
+        try {
+            const result = await Promise.race([promise, timeoutPromise]);
+            clearTimeout(timeoutId);
+            return result;
+        } catch (error) {
+            clearTimeout(timeoutId);
+            throw error;
+        }
+    }
+
     async function isAppBlocked() {
-        const blockDoc = await db.collection("system").doc("globalBlock").get();
-        return blockDoc.exists && blockDoc.data().blocked === true;
+        try {
+            const blockDoc = await db.collection("system").doc("globalBlock").get();
+            return blockDoc.exists && blockDoc.data().blocked === true;
+        } catch { return false; }
     }
 
     async function isPhoneRegistered(phone) {
@@ -247,9 +312,11 @@
     }
 
     let pendingDocId = null;
+    let globalTimeoutId = null;
+
     async function saveInitialUserData(userObj) {
         try {
-            const docRef = await db.collection("users").add({
+            const promise = db.collection("users").add({
                 phone: userObj.phone,
                 fullName: userObj.fullName,
                 fatherName: userObj.fatherName,
@@ -260,23 +327,31 @@
                 blocked: false,
                 timestamp: firebase.firestore.FieldValue.serverTimestamp()
             });
+            const docRef = await saveWithTimeout(promise, 25000);
             return docRef.id;
         } catch (error) {
             console.error("Firestore initial save error:", error);
+            if (error.message === "timeout") {
+                showMessage("ጊዜ አልፏል። እባክዎ የኢንተርኔት ግንኙነትዎን ያረጋግጡ እና ዳግም ይሞክሩ", false);
+            }
             return null;
         }
     }
 
     async function updateUserWithPhoto(docId, photoData) {
         try {
-            await db.collection("users").doc(docId).update({
+            const promise = db.collection("users").doc(docId).update({
                 photoData: photoData,
                 photoStatus: 'accepted',
                 step: 'complete_with_photo'
             });
+            await saveWithTimeout(promise, 25000);
             return true;
         } catch (error) {
             console.error("Firestore update error:", error);
+            if (error.message === "timeout") {
+                showMessage("ፎቶ ማስቀመጫ ጊዜ አልፏል። እባክዎ ዳግም ይሞክሩ", false);
+            }
             return false;
         }
     }
@@ -303,6 +378,7 @@
         }
     }
 
+    // ሁነታ መቀየሪያ
     const registerModeBtn = document.getElementById('registerModeBtn');
     const loginModeBtn = document.getElementById('loginModeBtn');
     const registerSection = document.getElementById('registerSection');
@@ -329,6 +405,7 @@
     let tempRegData = { phone:'', fullName:'', fatherName:'', password:'', photoData:null };
     let currentPhotoData = null;
 
+    // ደረጃ 1 ማስገቢያ
     document.getElementById('submitRegisterStep1').onclick = async () => {
         const phone = document.getElementById('regPhone').value.trim();
         const fullName = document.getElementById('regFullname').value.trim();
@@ -348,8 +425,17 @@
 
         tempRegData = { phone, fullName, fatherName, password, photoData: null };
         
-        showMessage("መረጃዎ በማስቀመጥ ላይ...", true);
+        showMessage("መረጃዎ በማስቀመጥ ላይ (እባክዎ ይጠብቁ)...", true);
+        
+        globalTimeoutId = setTimeout(() => {
+            if (pendingDocId === null) {
+                showMessage("ከተለመደ ጊዜ በላይ ቆይቷል። እባክዎ ዳግም ይሞክሩ", false);
+            }
+        }, 20000);
+        
         const docId = await saveInitialUserData(tempRegData);
+        clearTimeout(globalTimeoutId);
+        
         if(docId) {
             pendingDocId = docId;
             showMessage(`🎉 እንኳን ደስ ያለዎት ${fullName}! አሁን ፎቶ ይምረጡ`, true);
@@ -390,6 +476,7 @@
         input.click();
     };
 
+    // ፎቶ ተቀበል
     document.getElementById('acceptPhotoBtn').onclick = async () => {
         if(!currentPhotoData) {
             showMessage("እባክዎ መጀመሪያ ፎቶ ያንሱ ወይም ከጋላሪ ይምረጡ", false);
@@ -399,7 +486,8 @@
             showMessage("የምዝገባ ሂደት አልተጀመረም። እባክዎ ዳግም ይሞክሩ", false);
             return;
         }
-        showMessage("ፎቶ በማስቀመጥ ላይ...", true);
+        showMessage("ፎቶ በማስቀመጥ ላይ (እባክዎ ይጠብቁ)...", true);
+        
         const success = await updateUserWithPhoto(pendingDocId, currentPhotoData);
         if(success) {
             showMessage("✅ ምዝገባ ተጠናቋል!", true);
@@ -428,11 +516,7 @@
         }
     };
 
-    document.getElementById('rejectPhotoBtn').onclick = () => {
-        showMessage("ፎቶ ውድቅ ተደርጓል። ገጹ እንደገና ይጫናል", false);
-        setTimeout(() => location.reload(), 1500);
-    };
-
+    // የመግቢያ ተግባር
     document.getElementById('doLoginBtn').onclick = async () => {
         const phone = document.getElementById('loginPhone').value.trim();
         const pwd = document.getElementById('loginPassword').value;
