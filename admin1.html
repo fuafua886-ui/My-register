@@ -146,12 +146,22 @@
             border-radius: 30px;
             display: inline-block;
         }
+        .error-msg {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 10px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
         footer { text-align: center; margin-top: 30px; color: #7f8c8d; }
     </style>
 </head>
 <body>
 <div class="container">
     <h1>📋 የአድሚን ፓናል (አጠቃላይ ቁጥጥር)</h1>
+
+    <div id="firebaseErrorMsg" class="error-msg" style="display:none;"></div>
 
     <div class="global-block-bar">
         <button id="globalBlockBtn" class="block-site-btn">🔒 ሊንኩን አግድ</button>
@@ -243,22 +253,30 @@
     }
     document.getElementById('globalBlockBtn').onclick = async () => {
         await setGlobalBlock(true);
-        alert("ሊንኩ ተግዷል! ተጠቃሚዎች 'አገልግሎቱ ተቋርጧል' የሚል መልዕክት ያያሉ።");
+        alert("ሊንኩ ተግዷል!");
     };
     document.getElementById('globalUnblockBtn').onclick = async () => {
         await setGlobalBlock(false);
-        alert("ማገድ ተነስቷል! ሊንኩ ተመልሶ ይሰራል።");
+        alert("ማገድ ተነስቷል!");
     };
 
     // ========== ተጠቃሚዎችን ማስተዳደር ==========
     async function loadAllUsers() {
-        const snapshot = await db.collection("users").orderBy("timestamp", "desc").get();
-        const records = [];
-        snapshot.forEach(doc => {
-            const data = doc.data();
-            records.push({ id: doc.id, ...data, timestamp: data.timestamp?.toDate() || new Date() });
-        });
-        return records;
+        try {
+            const snapshot = await db.collection("users").orderBy("timestamp", "desc").get();
+            const records = [];
+            snapshot.forEach(doc => {
+                const data = doc.data();
+                records.push({ id: doc.id, ...data, timestamp: data.timestamp?.toDate() || new Date() });
+            });
+            console.log("✅ ተጠቃሚዎች ተጭነዋል:", records.length);
+            return records;
+        } catch (error) {
+            console.error("❌ Firestore ስህተት:", error);
+            document.getElementById('firebaseErrorMsg').style.display = 'block';
+            document.getElementById('firebaseErrorMsg').innerHTML = `⚠️ የFirebase ስህተት: ${error.message}<br>እባክዎ የደህንነት ህጎችን (Rules) ያረጋግጡ።`;
+            return [];
+        }
     }
 
     async function toggleBlockUser(userId, currentBlocked) {
