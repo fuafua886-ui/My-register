@@ -201,6 +201,9 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
+    // የመሸጎጫ ችግርን ለማስወገድ የFirestore ማስተካከያ
+    db.settings({ experimentalForceLongPolling: true });
+
     const ADMIN_BG_KEY = 'admin_global_background';
 
     function saveAdminBackground(base64) {
@@ -244,7 +247,8 @@
         updateBlockStatus();
     }
     async function isAppBlocked() {
-        const doc = await db.collection("system").doc("globalBlock").get();
+        // ከሰርቨሩ ላይ ብቻ እንዲያነብ ማድረግ
+        const doc = await db.collection("system").doc("globalBlock").get({ source: 'server' });
         return doc.exists && doc.data().blocked === true;
     }
     async function updateBlockStatus() {
@@ -261,9 +265,11 @@
     };
 
     // ========== ተጠቃሚዎችን ማስተዳደር ==========
+    // ለመጀመሪያ ጊዜ መረጃ ለመጫን ብቻ የሚያገለግል
     async function loadAllUsers() {
         try {
-            const snapshot = await db.collection("users").orderBy("timestamp", "desc").get();
+            // { source: 'server' } በመጨመር ሁልጊዜ አዲሱን መረጃ ከሰርቨር እንዲያመጣ እናደርጋለን
+            const snapshot = await db.collection("users").orderBy("timestamp", "desc").get({ source: 'server' });
             const records = [];
             snapshot.forEach(doc => {
                 const data = doc.data();
@@ -281,12 +287,12 @@
 
     async function toggleBlockUser(userId, currentBlocked) {
         await db.collection("users").doc(userId).update({ blocked: !currentBlocked });
-        refreshPanel();
+        // refreshPanel() ከ setInterval ስለተወገደ በ onSnapshot ራሱ ይዘመናል
     }
     async function deleteUser(userId) {
         if(confirm("ይህን ተጠቃሚ ሙሉ በሙሉ መሰረዝ ይፈልጋሉ?")) {
             await db.collection("users").doc(userId).delete();
-            refreshPanel();
+            // እዚህም ራሱ በ onSnapshot ይዘመናል
         }
     }
     async function deleteAllUsers() {
@@ -295,7 +301,6 @@
             const batch = db.batch();
             snapshot.docs.forEach(doc => batch.delete(doc.ref));
             await batch.commit();
-            refreshPanel();
         }
     }
 
@@ -344,16 +349,35 @@
         window.deleteUser = async (id) => { await deleteUser(id); };
     }
 
-    async function refreshPanel() {
-        const records = await loadAllUsers();
-        renderStats(records);
-        renderUserList(records);
+    // ========== የቀጥታ ማዳመጫ (Real-time Listener) ==========
+    // ይህ ተግባር መረጃ ሲቀየር ወዲያውኑ ራሱን ያዘምናል (setInterval አያስፈልግም)
+    function listenToUsers() {
+        db.collection("users").orderBy("timestamp", "desc")
+            .onSnapshot((snapshot) => {
+                const records = [];
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    records.push({ id: doc.id, ...data, timestamp: data.timestamp?.toDate() || new Date() });
+                });
+                console.log("🔄 መረጃ በቀጥታ ተዘምኗል:", records.length);
+                renderStats(records);
+                renderUserList(records);
+            }, (error) => {
+                console.error("❌ የቀጥታ ማዳመጫ ስህተት:", error);
+                document.getElementById('firebaseErrorMsg').style.display = 'block';
+                document.getElementById('firebaseErrorMsg').innerHTML = `⚠️ የFirebase ስህተት: ${error.message}`;
+            });
     }
 
     document.getElementById('clearAllBtn').onclick = deleteAllUsers;
     updateBlockStatus();
-    refreshPanel();
-    setInterval(refreshPanel, 5000);
+    
+    // መጀመሪያ መረጃውን ጫን እና ከዚያ የቀጥታ ማዳመጫውን ጀምር
+    loadAllUsers().then(() => {
+        listenToUsers();
+    });
+
+    // ❌ setInterval(refreshPanel, 5000); ተወግዷል
 </script>
 </body>
 </html>
